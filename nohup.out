@@ -1,0 +1,14 @@
+Watching for file changes with StatReloader
+[01/Nov/2024 20:47:45] "GET /tickets/login/ HTTP/1.1" 200 883
+[01/Nov/2024 20:47:47] "GET /tickets/login/ HTTP/1.1" 200 883
+[01/Nov/2024 20:47:48] "GET /tickets/login/ HTTP/1.1" 200 883
+[01/Nov/2024 20:47:48] "GET /tickets/login/ HTTP/1.1" 200 883
+[01/Nov/2024 20:47:48] "GET /tickets/login/ HTTP/1.1" 200 883
+Performing system checks...
+
+System check identified no issues (0 silenced).
+November 01, 2024 - 20:47:37
+Django version 5.1, using settings 'gestion_tickets.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
