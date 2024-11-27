@@ -1,0 +1,25 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <link rel="stylesheet" href="{% static 'tickets/css/style.css' %}">
+</head>
+<body>
+    <header>Página de inicio</header>
+    <main>
+        <div class="home-container">
+            <h1>Bienvenido, {{ user.nombre }} {{ user.apellido }}</h1>
+            <p>Departamento: {{ user.departamento.descripcion }}</p>
+        <!-- <p>Rol: {{ user.rol.descripcion }}</p> 
+        -->
+            <nav>
+                <a href="{% url 'logout' %}" class="logout-button">Cerrar Sesión</a>
+            </nav>
+        </div>
+    </main>    
+</body>
+</html>
