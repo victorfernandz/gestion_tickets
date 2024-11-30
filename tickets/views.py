@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import Usuario
+from .models import Usuario, Ticket
 
 # Vista de Login
 def login(request):
@@ -40,3 +40,16 @@ def home(request):
 def logout(request):
     request.session.flush()  # Eliminar todos los datos de la sesión
     return redirect('login')
+
+# Vista de Tickets
+def crear_tickets(request):
+    if request.method == 'POST':
+        asunto = request.POST.get('asunto')
+        descripcion = request.POST.get('descripcion')
+        usuario = Usuario.objects.get(id=request.session.get('user_id'))
+
+        # Crear el ticket
+        Ticket.objects.create(asunto=asunto, descripcion=descripcion, usuario=usuario)
+        messages.success(request= 'Ticket creado existosamente')
+        return redirect('home')
+    return render(request, 'tickets/crear_ticket.html')

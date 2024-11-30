@@ -6,6 +6,99 @@ body {
     color: #333;
 }
 
+/* Barra superior fija */
+.navbar {
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content:space-between;
+    position: fixed;
+    top: 0;
+    width: 99%;
+    z-index: 1000;
+}
+
+.logo-img {
+    height: 50px;
+}
+
+.navbar-title h1 {
+    margin: 0;
+    font-size: 1.5em;
+    align-content: left;
+}
+
+/* Contenedor principal */
+.container {
+    display: flex;
+    margin-top: 70px;
+}
+
+/* Menú lateral */
+.sidebar {
+    width: 250px;
+    background-color: #f1f1f1;
+    padding: 20px;
+    border-right: 1px solid #ccc;
+    height: 90vh; /* Altura completa de la ventana */
+    position: fixed;
+    display: flex;
+    flex-direction: column; /* Asegura que los elementos se alineen en columna */
+}
+
+/* Lista del menú lateral */
+.sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.sidebar nav ul li {
+    margin-bottom: 15px;
+}
+
+.sidebar nav ul li a {
+    text-decoration: none;
+    color: #000000;
+    font-weight: bold;
+}
+
+.sidebar nav ul li a:hover {
+    color: #797676;
+}
+
+/* Contenedor del bóton de Cerrar Sesión */
+.logout-container {
+    margin-top: auto;
+    padding-top: 20px;
+}
+
+/* Botón de cerrar sesión al final del sidebar */
+.logout-button {
+    color: #fff; /* Texto blanco */
+    background-color: #5a5e64; /* Gris oscuro */
+    padding: 10px 15px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;    
+    text-align: center;
+    transition: background-color 0.3s ease; /* Transición suave para hover */
+    display: block;
+}
+
+.logout-button:hover {
+    background-color: #000; /* Negro al pasar el cursor */
+    color: #fff; /* Texto permanece blanco */
+}
+
+/* Contenido dinámico */
+.content {
+    margin-left: 270px; /* Ajusta al ancho del sidebar */
+    padding: 20px;
+    flex-grow: 1;
+}
+
 header {
     background: linear-gradient(90deg, #323842, #000000);
     color: #fff;
@@ -18,6 +111,7 @@ header {
     font-size: 1.8em;
 }
 
+/* Estilo para el formulario de inicio de sesión */
 .login-container {
     max-width: 400px;
     margin: 50px auto;
@@ -69,6 +163,7 @@ header {
     background-color: #000000;
 }
 
+/* Mensajes de error */
 .messages {
     margin-top: 20px;
     text-align: center;
@@ -79,6 +174,7 @@ header {
     font-weight: bold;
 }
 
+/* Pie de página */
 footer {
     text-align: center;
     padding: 10px;
@@ -94,20 +190,6 @@ footer {
     font-size: 0.9em;
 }
 
-.logout-button {
-    color: #fff;
-    background-color: #5a5e64;
-    padding: 10px 15px;
-    text-decoration: none;
-    border-radius: 5px;
-    font-weight: bold;
-    transition: background-color 0.3s ease;
-}
-
-.logout-button:hover {
-    background-color: #000000;
-}
-
 .home-container {
     text-align: center;
     margin: 50px auto;
@@ -116,6 +198,7 @@ footer {
     max-width: 400px;
 }
 
+/* Responsividad */
 @media (max-width: 600px) {
     .login-container {
         padding: 10px;

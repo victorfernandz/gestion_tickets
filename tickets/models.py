@@ -29,3 +29,23 @@ class Usuario(models.Model):
 
     def __str__(self):
         return f"{self.nombre} {self.apellido} ({self.usuario})"
+
+#Tabla de Estados    
+class Estado(models.Model):
+    id = models.AutoField(primary_key=True)
+    descripcion = models.CharField(max_length=10)
+
+    def __str__(self):
+        return self.descripcion
+
+#Tabla de Tickets
+class Ticket(models.Model):
+    id = models.AutoField(primary_key=True)
+    usuario = models.ForeignKey(Usuario, on_delete=models.DO_NOTHING)
+    asunto = models.CharField(max_length=50)
+    descripcion = models.TextField()
+    fecha_creacion = models.DateTimeField()
+    estado = models.ForeignKey(Estado, on_delete=models.DO_NOTHING, null=False, blank=False)
+
+    def __str__(self):
+        return self.id
