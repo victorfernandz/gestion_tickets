@@ -1,6 +1,14 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import Usuario, Ticket
+from .models import Usuario, Ticket, Casos, Categoria
+from django.utils.timezone import now
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
+from django.conf import settings
+from django.contrib import messages
+
+def root_redirect(request):
+    return redirect('login')  # Redirige al nombre de la URL del login
 
 # Vista de Login
 def login(request):
@@ -41,15 +49,135 @@ def logout(request):
     request.session.flush()  # Eliminar todos los datos de la sesión
     return redirect('login')
 
-# Vista de Tickets
-def crear_tickets(request):
-    if request.method == 'POST':
-        asunto = request.POST.get('asunto')
-        descripcion = request.POST.get('descripcion')
-        usuario = Usuario.objects.get(id=request.session.get('user_id'))
 
-        # Crear el ticket
-        Ticket.objects.create(asunto=asunto, descripcion=descripcion, usuario=usuario)
-        messages.success(request= 'Ticket creado existosamente')
+# Vista para crear tickets
+def crear_ticket(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login') 
+
+    usuario = Usuario.objects.get(id=user_id)
+
+    if request.method == 'POST':
+        # Obtener los datos del formulario
+        tipo_caso_id = request.POST.get('tipoCaso')
+        descripcion = request.POST.get('descripcion')
+        prioridad = request.POST.get('prioridad')
+        categoria_id = request.POST.get('categoria')
+
+        if not tipo_caso_id or not descripcion or not categoria_id:
+            messages.error(request, 'Todos los campos son obligatorios.')
+        else:
+            tipo_caso = Casos.objects.get(id=tipo_caso_id)
+            categoria = Categoria.objects.get(id=categoria_id)
+            ticket = Ticket.objects.create(
+                categoria=categoria,
+                usuario=usuario,
+                tipoCaso=tipo_caso,
+                descripcion=descripcion,
+                estado=1,
+                prioridad=prioridad
+            )
+
+            # Plantilla para el administrador
+            admin_message = render_to_string('tickets/email_template.html', {
+                'ticket_id': ticket.id,
+                'usuario': usuario,
+                'tipoCaso': tipo_caso.descripcion,
+                'descripcion': descripcion,
+                'prioridad': ticket.get_prioridad_display(),
+            })
+
+            # Enviar correo al administrador
+            try:
+                admin_email = EmailMessage(
+                    subject=f"Nuevo Ticket Creado: {ticket.id}",
+                    body=admin_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=['soporte@altamiragroup.com.py']
+                )
+                admin_email.content_subtype = 'html'  # Asegurar formato HTML
+                admin_email.send()
+            except Exception as e:
+                print(f"Error al enviar correo al administrador: {e}")
+                messages.error(request, "No se pudo enviar el correo al administrador.")
+
+            # Plantilla para el usuario
+            user_message = render_to_string('tickets/email_template_user.html', {
+                'ticket_id': ticket.id,
+                'tipoCaso': tipo_caso.descripcion,
+                'descripcion': descripcion,
+                'prioridad': ticket.get_prioridad_display(),
+            })
+
+            # Enviar correo al usuario
+            try:
+                user_email = EmailMessage(
+                    subject="Confirmación de Creación de Ticket",
+                    body=user_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[usuario.email]
+                )
+                user_email.content_subtype = 'html'  # Asegurar formato HTML
+                user_email.send()
+            except Exception as e:
+                print(f"Error al enviar correo al usuario: {e}")
+                messages.error(request, "No se pudo enviar el correo al usuario.")
+
+            messages.success(request, '¡El ticket fue creado exitosamente y se enviaron los correos!')
+            return redirect('listar_tickets')
+
+    tipos_casos = Casos.objects.all()
+    tipo_categoria = Categoria.objects.all()
+    return render(request, 'tickets/crear_ticket.html', {'tipos_casos': tipos_casos, 'tipo_categoria': tipo_categoria})
+
+
+# Vista para listar tickets
+def listar_tickets(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login') 
+
+    # Recuperar los tickets del usuario autenticado
+    tickets = Ticket.objects.filter(usuario_id=user_id)
+
+    return render(request, 'tickets/listar_tickets.html', {'tickets': tickets})
+
+
+# Vista para administrar tickets
+def administrar_tickets(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login') 
+
+    # Valida si el usuario es administrador
+    usuario = Usuario.objects.get(id=user_id)
+    if usuario.rol.descripcion != 'ADMIN':
         return redirect('home')
-    return render(request, 'tickets/crear_ticket.html')
+
+    tickets = Ticket.objects.all()
+    # Filtros
+    filtro_estado = request.GET.get('estado')
+    filtro_prioridad = request.GET.get('prioridad')
+    filtro_fecha = request.GET.get('fecha')
+
+    if filtro_estado:
+        tickets = tickets.filter(estado=filtro_estado)
+    if filtro_prioridad:
+        tickets = tickets.filter(prioridad=filtro_prioridad)
+    if filtro_fecha:
+        tickets = tickets.filter(fecha_creacion__date=filtro_fecha)
+
+    # Actualización de un ticket 
+    if request.method == 'POST':
+        ticket_id = request.POST.get('ticket_id')
+        nuevo_estado = request.POST.get('nuevo_estado')
+        nueva_prioridad = request.POST.get('nueva_prioridad')
+
+        ticket = Ticket.objects.get(id=ticket_id)
+        ticket.estado = nuevo_estado
+        ticket.prioridad = nueva_prioridad
+        ticket.save()
+        return redirect('administrar_tickets')
+
+    return render(request, 'tickets/administrar_tickets.html', {'tickets': tickets})

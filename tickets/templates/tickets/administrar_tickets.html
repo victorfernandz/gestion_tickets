@@ -1,0 +1,114 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrar Tickets</title>
+    <link rel="stylesheet" href="{% static 'tickets/css/style.css' %}">
+</head>
+<body>
+    <!-- Barra superior -->
+    <header class="navbar">
+        <div class="logo">
+            <img src="{% static 'tickets/imagenes/logo.jpeg' %}" alt="Logo" class="logo-img">
+        </div>
+        <div class="navbar-title">
+            <h1>Gestión de Tickets - Administración</h1>
+        </div>
+    </header>
+
+    <!-- Contenido principal -->
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <nav>
+                <ul>
+                    <li><a href="{% url 'home' %}">Inicio</a></li>
+                    <li><a href="{% url 'listar_tickets' %}">Tickets</a></li>
+                    <li><a href="#">Reportes</a></li>
+                    <li><a href="{% url 'administrar_tickets' %}">Administración</a></li>
+                </ul>
+            </nav>
+            <div class="logout-container">
+                <a href="{% url 'logout' %}" class="logout-button">Cerrar Sesión</a>
+            </div>
+        </div>
+
+        <!-- Área dinámica -->
+        <main class="content">
+            <h1>Administración de Tickets</h1>
+
+            <!-- Formulario de filtros -->
+            <form method="get">
+                <label for="estado">Estado:</label>
+                <select name="estado" id="estado">
+                    <option value="">Todos</option>
+                    <option value="1">Abierto</option>
+                    <option value="2">En Proceso</option>
+                    <option value="3">Cerrado</option>
+                </select>
+                <label for="prioridad">Prioridad:</label>
+                <select name="prioridad" id="prioridad">
+                    <option value="">Todas</option>
+                    <option value="1">Bajo</option>
+                    <option value="2">Medio</option>
+                    <option value="3">Alto</option>
+                    <option value="4">Muy Alto</option>
+                </select>
+                <label for="fecha">Fecha:</label>
+                <input type="date" name="fecha" id="fecha">
+                <button type="submit">Filtrar</button>
+            </form>
+
+            <!-- Tabla de tickets -->
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Usuario creador</th>
+                        <th>Estado</th>
+                        <th>Prioridad</th>
+                        <th>Fecha de Creación</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ticket in tickets %}
+                        <tr>
+                            <td>{{ ticket.id }}</td>
+                            <td>{{ ticket.usuario.nombre }}</td>
+                            <td>{{ ticket.get_estado_display }}</td>
+                            <td>{{ ticket.get_prioridad_display }}</td>
+                            <td>{{ ticket.fecha_creacion }}</td>
+                            <td>
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+                                    <select name="nuevo_estado">
+                                        <option value="1" {% if ticket.estado == 1 %}selected{% endif %}>Abierto</option>
+                                        <option value="2" {% if ticket.estado == 2 %}selected{% endif %}>En Proceso</option>
+                                        <option value="3" {% if ticket.estado == 3 %}selected{% endif %}>Cerrado</option>
+                                    </select>
+                                    <select name="nueva_prioridad">
+                                        <option value="1" {% if ticket.prioridad == 1 %}selected{% endif %}>Bajo</option>
+                                        <option value="2" {% if ticket.prioridad == 2 %}selected{% endif %}>Medio</option>
+                                        <option value="3" {% if ticket.prioridad == 3 %}selected{% endif %}>Alto</option>
+                                        <option value="4" {% if ticket.prioridad == 4 %}selected{% endif %}>Muy Alto</option>
+                                    </select>
+                                    <button type="submit">Actualizar</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6">No hay tickets disponibles.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </main>
+    </div>
+</body>
+</html>

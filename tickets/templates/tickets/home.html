@@ -25,9 +25,10 @@
         <div class="sidebar">
             <nav>
                 <ul>
-                    <li><a href="#">Inicio</a></li>
-                    <li><a href="#">Tickets</a></li>
+                    <li><a href="{% url 'home' %}">Inicio</a></li>
+                    <li><a href="{% url 'listar_tickets' %}">Tickets</a></li>
                     <li><a href="#">Reportes</a></li>
+                    <li><a href="{% url 'administrar_tickets' %}">Administración</a></li>
                 </ul>
             </nav>
             <!-- Botón de cerrar sesión -->

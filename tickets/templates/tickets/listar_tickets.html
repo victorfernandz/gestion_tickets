@@ -1,0 +1,81 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Tickets</title>
+    <link rel="stylesheet" href="{% static 'tickets/css/style.css' %}">
+</head>
+<body>
+    <!-- Barra superior fija -->
+    <header class="navbar">
+        <div class="logo">
+            <img src="{% static 'tickets/imagenes/logo.jpeg' %}" alt="Logo" class="logo-img">
+        </div>
+        <div class="navbar-title">
+            <h1>Gestión de Tickets</h1>
+        </div>
+    </header>
+
+    <!-- Contenedor principal -->
+    <div class="container">
+        <!-- Menú lateral -->
+        <div class="sidebar">
+            <nav>
+                <ul>
+                    <li><a href="{% url 'home' %}">Inicio</a></li>
+                    <li><a href="{% url 'listar_tickets' %}">Tickets</a></li>
+                    <li><a href="#">Reportes</a></li>
+                    <li><a href="{% url 'administrar_tickets' %}">Administración</a></li>
+                </ul>
+            </nav>
+            <!-- Botón de cerrar sesión -->
+            <div class="logout-container">
+                <a href="{% url 'logout' %}" class="logout-button">Cerrar Sesión</a>
+            </div>
+        </div>        
+
+        <!-- Contenido dinámico -->
+        <main class="content">
+            <div class="tickets-container">
+                <h1>Mis Tickets</h1>
+
+                <!-- Tabla de Tickets-->
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tipo caso</th>
+                            <th>Descripción</th>
+                            <th>Estado</th>
+                            <th>Fecha de Creación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ticket in tickets %}
+                            <tr>
+                                <td>{{ ticket.id }}</td>
+                                <td>{{ ticket.tipoCaso.descripcion }}</td>
+                                <td>{{ ticket.descripcion }}</td>
+                                <td>{{ ticket.get_estado_display }}</td>
+                                <td>{{ ticket.fecha_creacion }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5">No tienes tickets creados.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- Botón Crear Ticket -->
+                <div class="create-ticket-button">
+                    <a href="{% url 'crear_ticket' %}">Crear Ticket</a>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,3 +1,4 @@
+/* General */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -6,16 +7,23 @@ body {
     color: #333;
 }
 
-/* Barra superior fija */
+body h2 p{
+    margin-left: 1%;
+    position: fixed;
+}
+
+/* Navbar */
 .navbar {
     padding: 10px 20px;
     display: flex;
     align-items: center;
-    justify-content:space-between;
+    justify-content: space-between;
     position: fixed;
     top: 0;
-    width: 99%;
+    width: 98%;
     z-index: 1000;
+    background: linear-gradient(90deg, #323842, #000000);
+    color: #fff;
 }
 
 .logo-img {
@@ -25,28 +33,39 @@ body {
 .navbar-title h1 {
     margin: 0;
     font-size: 1.5em;
-    align-content: left;
 }
 
-/* Contenedor principal */
+/*Header */
+header {
+    background: linear-gradient(90deg, #323842, #000000);
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+}
+
+.header-title {
+    margin: 0;
+    font-size: 1.8em;
+}
+
+/* Main Container */
 .container {
     display: flex;
     margin-top: 70px;
 }
 
-/* Menú lateral */
+/* Sidebar */
 .sidebar {
     width: 250px;
     background-color: #f1f1f1;
     padding: 20px;
     border-right: 1px solid #ccc;
-    height: 90vh; /* Altura completa de la ventana */
+    height: 90vh;
     position: fixed;
     display: flex;
-    flex-direction: column; /* Asegura que los elementos se alineen en columna */
+    flex-direction: column;
 }
 
-/* Lista del menú lateral */
 .sidebar nav ul {
     list-style: none;
     padding: 0;
@@ -60,7 +79,7 @@ body {
 
 .sidebar nav ul li a {
     text-decoration: none;
-    color: #000000;
+    color: #000;
     font-weight: bold;
 }
 
@@ -68,50 +87,81 @@ body {
     color: #797676;
 }
 
-/* Contenedor del bóton de Cerrar Sesión */
+/* Content Area */
+.content {
+    margin-left: 270px;
+    padding: 20px;
+    flex-grow: 1;
+}
+
+/* Logout Button */
 .logout-container {
     margin-top: auto;
     padding-top: 20px;
 }
 
-/* Botón de cerrar sesión al final del sidebar */
 .logout-button {
-    color: #fff; /* Texto blanco */
-    background-color: #5a5e64; /* Gris oscuro */
+    color: #fff;
+    background-color: #5a5e64;
     padding: 10px 15px;
     text-decoration: none;
     border-radius: 5px;
-    font-weight: bold;    
+    font-weight: bold;
     text-align: center;
-    transition: background-color 0.3s ease; /* Transición suave para hover */
     display: block;
+    transition: background-color 0.3s ease;
+    border: 1px solid #000;
 }
 
 .logout-button:hover {
-    background-color: #000; /* Negro al pasar el cursor */
-    color: #fff; /* Texto permanece blanco */
-}
-
-/* Contenido dinámico */
-.content {
-    margin-left: 270px; /* Ajusta al ancho del sidebar */
-    padding: 20px;
-    flex-grow: 1;
-}
-
-header {
-    background: linear-gradient(90deg, #323842, #000000);
+    background-color: #000;
     color: #fff;
-    padding: 20px;
+}
+
+/* Table */
+table {
+    margin-left: 1%;
+    width: 98%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+table th, table td {
+    border: 1px solid #000;
+    padding: 8px;
+    text-align: left;
+}
+
+table th {
+    background-color: #5a5e64;
+    color: white;
+    text-transform: uppercase;
+}
+
+/* Botón Crear Ticket */
+.create-ticket-button {
     text-align: center;
+    margin: 50px 0;
 }
 
-.header-title {
-    margin: 0;
-    font-size: 1.8em;
+.create-ticket-button a {
+    color: #fff;
+    background-color: #5a5e64;
+    padding: 10px 15px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    display: inline-block;
+    border: 1px solid #000;
+    transition: background-color 0.3s ease;
 }
 
-/* Estilo para el formulario de inicio de sesión */
+.create-ticket-button a:hover {
+    background-color: #000;
+    color: #fff;
+}
+
+/* Fomulario Login */
 .login-container {
     max-width: 400px;
     margin: 50px auto;
@@ -127,6 +177,10 @@ header {
     color: #5a5e64;
 }
 
+.form-container {
+    margin-left: 1%;
+}
+
 .form-group {
     margin-bottom: 15px;
 }
@@ -137,9 +191,30 @@ header {
     margin-bottom: 5px;
 }
 
+.form-group textarea {
+    width: 50%;
+}
+
 .form-group input {
     width: 95%;
     padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.form-group-estado {
+    margin-bottom: 15px;
+}
+
+.form-group-estado label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.form-group-estado input {
+    width: 5%;
+    padding: 5px;
     border: 1px solid #ccc;
     border-radius: 5px;
 }
@@ -163,7 +238,7 @@ header {
     background-color: #000000;
 }
 
-/* Mensajes de error */
+/* Mensaje de Error */
 .messages {
     margin-top: 20px;
     text-align: center;
@@ -174,7 +249,7 @@ header {
     font-weight: bold;
 }
 
-/* Pie de página */
+/* Footer */
 footer {
     text-align: center;
     padding: 10px;
@@ -190,6 +265,7 @@ footer {
     font-size: 0.9em;
 }
 
+/* Home Container */
 .home-container {
     text-align: center;
     margin: 50px auto;
@@ -198,7 +274,14 @@ footer {
     max-width: 400px;
 }
 
-/* Responsividad */
+.contador-letras{
+    font-size: 0.9em;
+    color: #5a5e64;
+    margin-top: 5px;
+    text-align: left;
+}
+
+/* Estilo Responsivo */
 @media (max-width: 600px) {
     .login-container {
         padding: 10px;
