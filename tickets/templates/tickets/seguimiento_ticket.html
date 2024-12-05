@@ -1,0 +1,45 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento del Ticket {{ ticket.id }}</title>
+    <link rel="stylesheet" href="{% static 'tickets/css/style.css' %}">
+</head>
+<body>
+    <h1>Seguimiento del Ticket {{ ticket.id }}</h1>
+    <p><strong>Estado:</strong> {{ ticket.get_estado_display }}</p>
+    <p><strong>Prioridad:</strong> {{ ticket.get_prioridad_display }}</p>
+    <p>
+        <strong>Usuario de soporte asignado:</strong>
+        {% if ticket.admin_asignado %}
+            {{ ticket.admin_asignado.nombre }} {{ ticket.admin_asignado.apellido }}
+        {% else %}
+            No asignado
+        {% endif %}
+    </p>
+    <p><strong>Descripción:</strong> {{ ticket.descripcion }}</p>
+
+    <h2>Comentarios</h2>
+    <ul>
+        {% for comentario in comentarios %}
+            <li>
+                <strong>{{ comentario.usuario.nombre }}</strong>: {{ comentario.texto }} 
+                <em>({{ comentario.fecha_creacion|date:"d-m-Y H:i" }})</em>
+            </li>
+        {% empty %}
+            <li>No hay comentarios para este ticket.</li>
+        {% endfor %}
+    </ul>
+
+    {% if ticket.estado != 3 %}
+        <form method="post">
+            {% csrf_token %}
+            <textarea name="comentario" rows="4" placeholder="Escribe un comentario..." required></textarea>
+            <button type="submit">Agregar comentario</button>
+        </form>
+    {% endif %}
+</body>
+</html>

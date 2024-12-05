@@ -1,0 +1,17 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actualización de Ticket</title>
+</head>
+<body>
+    <h2>Actualización en el Ticket {{ ticket.id }}</h2>
+    <p><strong>Estado:</strong> {{ ticket.get_estado_display }}</p>
+    <p><strong>Prioridad:</strong> {{ ticket.get_prioridad_display }}</p>
+    <p><strong>Comentario:</strong> {{ comentario }}</p>
+    <p>Fecha: {{ ticket.fecha_modificacion }}</p>
+</body>
+</html>

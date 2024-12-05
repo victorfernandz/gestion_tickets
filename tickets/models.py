@@ -92,3 +92,5 @@ class Comentario(models.Model):
 
     def __str__(self):
         return f"Comentario de {self.usuario} en Ticket {self.ticket.id}"
+
+

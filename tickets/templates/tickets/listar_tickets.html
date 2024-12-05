@@ -56,7 +56,7 @@
                     <tbody>
                         {% for ticket in tickets %}
                             <tr>
-                                <td>{{ ticket.id }}</td>
+                                <td><a href="{% url 'seguimiento_ticket' ticket.id %}">{{ ticket.id }}</a></td>
                                 <td>{{ ticket.tipoCaso.descripcion }}</td>
                                 <td>{{ ticket.descripcion }}</td>
                                 <td>{{ ticket.get_estado_display }}</td>

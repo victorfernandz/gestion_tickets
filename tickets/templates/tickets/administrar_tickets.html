@@ -19,7 +19,7 @@
         </div>
     </header>
 
-    <!-- Contenido principal -->
+    <!-- Contenido principal --> 
     <div class="container">
         <!-- Sidebar -->
         <div class="sidebar">
@@ -71,39 +71,58 @@
                         <th>Estado</th>
                         <th>Prioridad</th>
                         <th>Fecha de Creación</th>
+                        <th>Usuario asignado</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for ticket in tickets %}
                         <tr>
-                            <td>{{ ticket.id }}</td>
+                            <td><a href="{% url 'seguimiento_ticket' ticket.id %}">{{ ticket.id }}</a></td>
                             <td>{{ ticket.usuario.nombre }}</td>
                             <td>{{ ticket.get_estado_display }}</td>
                             <td>{{ ticket.get_prioridad_display }}</td>
                             <td>{{ ticket.fecha_creacion }}</td>
                             <td>
+                                <p>{{ ticket.admin_asignado.nombre|default:"No asignado" }}</p>
+                            </td>
+                            <td>
                                 <form method="post">
                                     {% csrf_token %}
                                     <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+
+                                    <!-- Cambiar estado -->
                                     <select name="nuevo_estado">
                                         <option value="1" {% if ticket.estado == 1 %}selected{% endif %}>Abierto</option>
                                         <option value="2" {% if ticket.estado == 2 %}selected{% endif %}>En Proceso</option>
                                         <option value="3" {% if ticket.estado == 3 %}selected{% endif %}>Cerrado</option>
                                     </select>
+
+                                    <!-- Cambiar prioridad -->
                                     <select name="nueva_prioridad">
                                         <option value="1" {% if ticket.prioridad == 1 %}selected{% endif %}>Bajo</option>
                                         <option value="2" {% if ticket.prioridad == 2 %}selected{% endif %}>Medio</option>
                                         <option value="3" {% if ticket.prioridad == 3 %}selected{% endif %}>Alto</option>
                                         <option value="4" {% if ticket.prioridad == 4 %}selected{% endif %}>Muy Alto</option>
                                     </select>
+
+                                    <!-- Asignar administrador -->
+                                    <select name="nuevo_admin">
+                                        <option value="">No asignado</option>
+                                        {% for admin in administradores %}
+                                            <option value="{{ admin.id }}" {% if ticket.admin_asignado and ticket.admin_asignado.id == admin.id %}selected{% endif %}>
+                                                {{ admin.nombre }} {{ admin.apellido }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+
                                     <button type="submit">Actualizar</button>
                                 </form>
                             </td>
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="6">No hay tickets disponibles.</td>
+                            <td colspan="7">No hay tickets disponibles.</td>
                         </tr>
                     {% endfor %}
                 </tbody>
