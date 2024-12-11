@@ -120,15 +120,13 @@ header {
 
 /* Table */
 table {
-    margin-left: 1%;
-    width: 98%;
+    width: 99%;
     border-collapse: collapse;
-    margin-bottom: 20px;
 }
 
 table th, table td {
     border: 1px solid #000;
-    padding: 8px;
+    padding: 5px;
     text-align: left;
 }
 
@@ -136,6 +134,7 @@ table th {
     background-color: #5a5e64;
     color: white;
     text-transform: uppercase;
+    text-align: center;
 }
 
 /* Botón Crear Ticket */
@@ -179,6 +178,21 @@ table th {
 
 .form-container {
     margin-left: 1%;
+}
+
+.btn-agregar {
+    background-color: #5a5e64;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+}
+
+.btn-agregar:hover {
+    background-color: #000000;
 }
 
 .form-group {

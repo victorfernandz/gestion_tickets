@@ -9,6 +9,7 @@ class Departamento(models.Model):
     def __str__(self):
         return self.descripcion
 
+
 # Tabla de Roles
 class Rol(models.Model):
     id = models.AutoField(primary_key=True)
@@ -16,6 +17,7 @@ class Rol(models.Model):
 
     def __str__(self):
         return self.descripcion
+
 
 # Tabla de Usuarios
 class Usuario(models.Model):
@@ -32,28 +34,33 @@ class Usuario(models.Model):
     def __str__(self):
         return f"{self.nombre} {self.apellido} ({self.usuario})"
 
-# Tabla Tipo de Casos
-class Casos(models.Model):
-    id = models.AutoField(primary_key=True)
-    descripcion = models.CharField(max_length=30)
-
-    def __str__(self):
-        return self.descripcion
 
 # Tabla de Categorías
 class Categoria(models.Model):
     id = models.AutoField(primary_key=True)
-    descripcion = models.CharField(max_length=20)
+    descripcion = models.CharField(max_length=100)
 
     def __str__(self):
-        return self.descripcion
+        return f"{self.id} - {self.descripcion}"
+
+
+# Tabla Tipo de Casos
+class Casos(models.Model):
+    id = models.AutoField(primary_key=True)
+    descripcion = models.CharField(max_length=50)
+    categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.id} - {self.descripcion}"
+
 
 # Tabla de Tickets
 class Ticket(models.Model):
     ESTADO = [
         (1, "Abierto"),
         (2, "En proceso"),
-        (3, "Cerrado"),
+        (3, "En espera de feedback"),
+        (4, "Cerrado"),
     ]
     PRIORIDAD = [
         (1, "Bajo"),
@@ -83,6 +90,7 @@ class Ticket(models.Model):
     def __str__(self):
         return f"Ticket {self.id} - {self.tipoCaso.descripcion}"
 
+
 # Tabla de Comentarios
 class Comentario(models.Model):
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name="comentarios")  # Relación con el ticket
@@ -92,5 +100,3 @@ class Comentario(models.Model):
 
     def __str__(self):
         return f"Comentario de {self.usuario} en Ticket {self.ticket.id}"
-
-

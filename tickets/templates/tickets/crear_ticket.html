@@ -49,19 +49,19 @@
                         <select id="categoria" name="categoria" required>
                             <option value="">Seleccione una opción</option>
                             {% for categoria in tipo_categoria %}
-                                <option value="{{ categoria.id}}" >{{categoria.descripcion}}</option>
+                                <option value="{{ categoria.id }}">{{ categoria.descripcion }}</option>
                             {% endfor %}
                         </select>
                     </div>
 
-                    <div class="form-group">                        
+                    <div class="form-group">
                         <label for="tipoCaso">Seleccione el Tipo de Caso:</label>
                         <select id="tipoCaso" name="tipoCaso" required>
-                            <option value="">Seleccione una opción</option>
-                            {% for caso in tipos_casos %}
+                            <option value="">Seleccione un caso</option>
+                            {% for caso in casos %}
                                 <option value="{{ caso.id }}">{{ caso.descripcion }}</option>
                             {% endfor %}
-                        </select>
+                        </select>                        
                     </div>
                     
                     <div class="form-group">

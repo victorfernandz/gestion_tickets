@@ -5,9 +5,9 @@ from django.utils.timezone import now
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.conf import settings
-
-def root_redirect(request):
-    return redirect('login')  # Redirige al nombre de la URL del login
+from django.http import JsonResponse
+from django.db import models
+from django.http import HttpResponseBadRequest
 
 # Vista de Login
 def login(request):
@@ -49,16 +49,14 @@ def logout(request):
     return redirect('login')
 
 
-# Vista para crear tickets
 def crear_ticket(request):
     user_id = request.session.get('user_id')
     if not user_id:
-        return redirect('login') 
+        return redirect('login')  # Redirigir si no hay sesión
 
     usuario = Usuario.objects.get(id=user_id)
 
     if request.method == 'POST':
-        # Obtener los datos del formulario
         tipo_caso_id = request.POST.get('tipoCaso')
         descripcion = request.POST.get('descripcion')
         prioridad = request.POST.get('prioridad')
@@ -95,10 +93,9 @@ def crear_ticket(request):
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     to=['soporte@altamiragroup.com.py']
                 )
-                admin_email.content_subtype = 'html'  # Asegurar formato HTML
+                admin_email.content_subtype = 'html'  
                 admin_email.send()
             except Exception as e:
-            #    print(f"Error al enviar correo al administrador: {e}")
                 messages.error(request, "No se pudo enviar el correo al administrador.")
 
             # Plantilla para el usuario
@@ -117,19 +114,21 @@ def crear_ticket(request):
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     to=[usuario.email]
                 )
-                user_email.content_subtype = 'html'  # Asegurar formato HTML
+                user_email.content_subtype = 'html'
                 user_email.send()
             except Exception as e:
-            #    print(f"Error al enviar correo al usuario: {e}")
                 messages.error(request, "No se pudo enviar el correo al usuario.")
 
-            #messages.success(request, '¡El ticket fue creado exitosamente y se enviaron los correos!')
             return redirect('listar_tickets')
 
-    tipos_casos = Casos.objects.all()
+    # Si es un GET normal (mostrar el formulario)
     tipo_categoria = Categoria.objects.all()
-    return render(request, 'tickets/crear_ticket.html', {'tipos_casos': tipos_casos, 'tipo_categoria': tipo_categoria})
-
+    casos = Casos.objects.all()  # Obtener todos los casos sin filtrar por categoría
+    return render(request, 'tickets/crear_ticket.html', {
+        'tipo_categoria': tipo_categoria,
+        'casos': casos
+    })
+        
 
 # Vista para listar tickets
 def listar_tickets(request):
@@ -142,7 +141,7 @@ def listar_tickets(request):
     if usuario.rol.descripcion != 'ADMIN':
         tickets = Ticket.objects.filter(usuario_id=user_id)
     else:
-        tickets = Ticket.objects.all()
+        tickets = Ticket.objects.all().order_by('id')
     return render(request, 'tickets/listar_tickets.html', {'tickets': tickets})
 
 
@@ -222,7 +221,6 @@ def administrar_tickets(request):
     })
 
 
-
 # Vista de Seguimiento del Ticket
 def seguimiento_ticket(request, ticket_id):
     user_id = request.session.get('user_id')
@@ -233,7 +231,7 @@ def seguimiento_ticket(request, ticket_id):
 
     # Verificar que el usuario sea el creador del ticket o admin asignado
     usuario = Usuario.objects.get(id=user_id)
-    if usuario != ticket.usuario and usuario != ticket.admin_asignado:
+    if usuario != ticket.usuario and usuario.rol.descripcion != 'ADMIN':
         messages.error(request, 'No tienes permiso para ver este ticket.')
         return redirect('home')
 
@@ -250,7 +248,7 @@ def seguimiento_ticket(request, ticket_id):
 
             # Preparar y enviar el correo
             try:
-                subject = f"Nuevo comentario en Ticket ID: {ticket.id}"
+                subject = f"Nuevo comentario en el Ticket con ID: {ticket.id}"
                 message = render_to_string('tickets/email_comentario.html', {
                     'ticket': ticket,
                     'comentario': comentario_texto,
@@ -259,7 +257,7 @@ def seguimiento_ticket(request, ticket_id):
                 email = EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, [destinatario])
                 email.content_subtype = 'html'
                 email.send()
-                messages.success(request, 'Comentario añadido y notificado.')
+            #    messages.success(request, 'Comentario añadido y notificado.')
             except Exception as e:
                 print(f"Error al enviar correo: {e}")
                 messages.error(request, 'El comentario fue guardado, pero no se pudo enviar la notificación por correo.')
