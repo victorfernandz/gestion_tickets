@@ -1,13 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .models import Usuario, Ticket, Casos, Categoria, Comentario
-from django.utils.timezone import now
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.http import JsonResponse
-from django.db import models
-from django.http import HttpResponseBadRequest
+from django.db.models import Q
 
 # Vista de Login
 def login(request):
@@ -31,31 +29,51 @@ def login(request):
 
     return render(request, 'tickets/login.html')
 
-
 # Vista de Home
 def home(request):
     user_id = request.session.get('user_id')
     if not user_id:
-        return redirect('login')  # Redirigir al login si no hay sesión
+        return redirect('login')
 
     # Recuperar los datos del usuario autenticado
     user = Usuario.objects.get(id=user_id)
     return render(request, 'tickets/home.html', {'user': user})
 
-
 # Vista de Logout
 def logout(request):
-    request.session.flush()  # Eliminar todos los datos de la sesión
+    request.session.flush()  
     return redirect('login')
 
-
+# Creción de tickets
 def crear_ticket(request):
     user_id = request.session.get('user_id')
     if not user_id:
-        return redirect('login')  # Redirigir si no hay sesión
+        return redirect('login') 
 
     usuario = Usuario.objects.get(id=user_id)
 
+    # Si es una petición AJAX para filtrar casos por categoría
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        categoria_id = request.GET.get('categoria_id')
+        if categoria_id:
+            if categoria_id == '4':
+                # Si la categoría seleccionada es la 4 (Urgente)
+                # Mostrar sólo los casos con categoria_id=4
+                casos = Casos.objects.filter(categoria=4)
+            else:
+                # Si la categoría es distinta a 4,
+                # mostrar casos que tengan categoria null O categoria distinta de 4
+                casos = Casos.objects.all()
+            
+            data = {
+                'casos': [{'id': c.id, 'descripcion': c.descripcion} for c in casos]
+            }
+            return JsonResponse(data)
+        else:
+            # Si no se proporcionó categoria_id, retornar un listado vacío
+            return JsonResponse({'casos': []})
+
+    # Si es un POST normal (envío del formulario para crear el ticket)
     if request.method == 'POST':
         tipo_caso_id = request.POST.get('tipoCaso')
         descripcion = request.POST.get('descripcion')
@@ -82,7 +100,7 @@ def crear_ticket(request):
                 'usuario': usuario,
                 'tipoCaso': tipo_caso.descripcion,
                 'descripcion': descripcion,
-                'prioridad': ticket.get_prioridad_display(),
+                'prioridad': prioridad,
             })
 
             # Enviar correo al administrador
@@ -103,7 +121,7 @@ def crear_ticket(request):
                 'ticket_id': ticket.id,
                 'tipoCaso': tipo_caso.descripcion,
                 'descripcion': descripcion,
-                'prioridad': ticket.get_prioridad_display(),
+                'prioridad': prioridad,
             })
 
             # Enviar correo al usuario
@@ -121,15 +139,10 @@ def crear_ticket(request):
 
             return redirect('listar_tickets')
 
-    # Si es un GET normal (mostrar el formulario)
+     # Si es un GET normal, mostrar el formulario sin AJAX
     tipo_categoria = Categoria.objects.all()
-    casos = Casos.objects.all()  # Obtener todos los casos sin filtrar por categoría
-    return render(request, 'tickets/crear_ticket.html', {
-        'tipo_categoria': tipo_categoria,
-        'casos': casos
-    })
+    return render(request, 'tickets/crear_ticket.html', {'tipo_categoria': tipo_categoria})
         
-
 # Vista para listar tickets
 def listar_tickets(request):
     user_id = request.session.get('user_id')
@@ -144,7 +157,7 @@ def listar_tickets(request):
         tickets = Ticket.objects.all().order_by('id')
     return render(request, 'tickets/listar_tickets.html', {'tickets': tickets})
 
-
+# Vista para la administración de tickets
 def administrar_tickets(request):
     user_id = request.session.get('user_id')
     if not user_id:
@@ -191,7 +204,7 @@ def administrar_tickets(request):
 
         ticket.save()
 
-        # Enviar correo de notificación al usuario y al nuevo administrador asignado
+        # Se envía correo de notificación al usuario y al nuevo administrador asignado
         destinatarios = [ticket.usuario.email]
         if ticket.admin_asignado:
             destinatarios.append(ticket.admin_asignado.email)
@@ -220,7 +233,6 @@ def administrar_tickets(request):
         'administradores': administradores  # Pasar administradores al contexto
     })
 
-
 # Vista de Seguimiento del Ticket
 def seguimiento_ticket(request, ticket_id):
     user_id = request.session.get('user_id')
@@ -229,7 +241,7 @@ def seguimiento_ticket(request, ticket_id):
 
     ticket = get_object_or_404(Ticket, id=ticket_id)
 
-    # Verificar que el usuario sea el creador del ticket o admin asignado
+    # Verifica que el usuario sea el creador del ticket
     usuario = Usuario.objects.get(id=user_id)
     if usuario != ticket.usuario and usuario.rol.descripcion != 'ADMIN':
         messages.error(request, 'No tienes permiso para ver este ticket.')
@@ -238,15 +250,15 @@ def seguimiento_ticket(request, ticket_id):
     if request.method == 'POST':
         comentario_texto = request.POST.get('comentario')
         if comentario_texto:
-            # Crear el comentario
+            # Crea el comentario
             Comentario.objects.create(ticket=ticket, usuario=usuario, texto=comentario_texto)
 
-            # Determinar el destinatario del correo
+            # Determina el destinatario del correo
             destinatario = (
                 ticket.admin_asignado.email if usuario == ticket.usuario else ticket.usuario.email
             )
 
-            # Preparar y enviar el correo
+            # Prepara y envia el correo
             try:
                 subject = f"Nuevo comentario en el Ticket con ID: {ticket.id}"
                 message = render_to_string('tickets/email_comentario.html', {
@@ -264,7 +276,7 @@ def seguimiento_ticket(request, ticket_id):
         else:
             messages.error(request, 'El comentario no puede estar vacío.')
 
-    # Obtener comentarios en orden cronológico
+    # Se muestran los comentarios en orden cronológico
     comentarios = ticket.comentarios.all().order_by('fecha_creacion')
 
     return render(request, 'tickets/seguimiento_ticket.html', {

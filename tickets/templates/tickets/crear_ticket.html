@@ -58,9 +58,6 @@
                         <label for="tipoCaso">Seleccione el Tipo de Caso:</label>
                         <select id="tipoCaso" name="tipoCaso" required>
                             <option value="">Seleccione un caso</option>
-                            {% for caso in casos %}
-                                <option value="{{ caso.id }}">{{ caso.descripcion }}</option>
-                            {% endfor %}
                         </select>                        
                     </div>
                     
