@@ -5,7 +5,9 @@ from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.http import JsonResponse
-from django.db.models import Q
+from .tasks import enviar_correo_admin
+from .tasks import enviar_correo_usuario
+from datetime import timedelta
 
 # Vista de Login
 def login(request):
@@ -60,10 +62,15 @@ def crear_ticket(request):
                 # Si la categoría seleccionada es la 4 (Urgente)
                 # Mostrar sólo los casos con categoria_id=4
                 casos = Casos.objects.filter(categoria=4)
-            else:
-                # Si la categoría es distinta a 4,
-                # mostrar casos que tengan categoria null O categoria distinta de 4
-                casos = Casos.objects.all()
+            elif categoria_id == '3':
+                casos = Casos.objects.filter(categoria=3)
+            elif categoria_id == '2':
+                casos = Casos.objects.filter(categoria=2)
+            elif categoria_id == '1':
+                casos = Casos.objects.filter(categoria=1)
+            else :
+                # mostrar casos que tengan categoria null
+                casos = Casos.objects.exclude(categoria=4)
             
             data = {
                 'casos': [{'id': c.id, 'descripcion': c.descripcion} for c in casos]
@@ -94,50 +101,38 @@ def crear_ticket(request):
                 prioridad=prioridad
             )
 
-            # Plantilla para el administrador
-            admin_message = render_to_string('tickets/email_template.html', {
+            # Generar los mensajes para los correos
+            mensaje_admin = render_to_string('tickets/email_template.html', {
                 'ticket_id': ticket.id,
                 'usuario': usuario,
                 'tipoCaso': tipo_caso.descripcion,
                 'descripcion': descripcion,
-                'prioridad': prioridad,
+                'prioridad': ticket.get_prioridad_display(),
             })
 
-            # Enviar correo al administrador
-            try:
-                admin_email = EmailMessage(
-                    subject=f"Nuevo ticket creado con ID: {ticket.id}",
-                    body=admin_message,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    to=['soporte@altamiragroup.com.py']
-                )
-                admin_email.content_subtype = 'html'  
-                admin_email.send()
-            except Exception as e:
-                messages.error(request, "No se pudo enviar el correo al administrador.")
-
-            # Plantilla para el usuario
-            user_message = render_to_string('tickets/email_template_user.html', {
+            mensaje_usuario = render_to_string('tickets/email_template_user.html', {
                 'ticket_id': ticket.id,
                 'tipoCaso': tipo_caso.descripcion,
                 'descripcion': descripcion,
-                'prioridad': prioridad,
+                'prioridad': ticket.get_prioridad_display(),
             })
 
-            # Enviar correo al usuario
-            try:
-                user_email = EmailMessage(
-                    subject="Confirmación de Creación de Ticket",
-                    body=user_message,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    to=[usuario.email]
-                )
-                user_email.content_subtype = 'html'
-                user_email.send()
-            except Exception as e:
-                messages.error(request, "No se pudo enviar el correo al usuario.")
+            # Delegar el envío de correos a Celery
+            enviar_correo_admin.delay(
+                ticket.id, 
+                'soporte@altamiragroup.com.py', 
+                mensaje_admin
+            )
 
+            enviar_correo_usuario.delay(
+                ticket.id, 
+                usuario.email, 
+                mensaje_usuario
+            )
+
+            messages.success(request, 'Ticket creado con éxito.')
             return redirect('listar_tickets')
+
 
      # Si es un GET normal, mostrar el formulario sin AJAX
     tipo_categoria = Categoria.objects.all()
@@ -190,8 +185,14 @@ def administrar_tickets(request):
         nueva_prioridad = request.POST.get('nueva_prioridad')
         nuevo_admin_id = request.POST.get('nuevo_admin')  # ID del administrador seleccionado
         comentario_texto = request.POST.get('comentario')
+        nuevo_tiempo_resolucion = request.POST.get('tiempo_resolucion')
 
         ticket = get_object_or_404(Ticket, id=ticket_id)
+
+        # Actualiza el tiempo de resolución
+        if nuevo_tiempo_resolucion:
+            horas, minutos = map(int, nuevo_tiempo_resolucion.split(':'))
+            ticket.tiempo_resolucion = timedelta(hours=horas, minutes=minutos)
 
         # Actualiza estado, prioridad y administrador si se proporcionan
         if nuevo_estado:

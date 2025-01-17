@@ -138,3 +138,9 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'soporte@altamiragroup.com.py'
 EMAIL_HOST_PASSWORD = '@altamira'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+# Configuración de Celery
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # URL del broker (Redis)
+CELERY_ACCEPT_CONTENT = ['json']  # Formato de los mensajes
+CELERY_TASK_SERIALIZER = 'json'  # Serializador para las tareas

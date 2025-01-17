@@ -74,6 +74,7 @@
                             <th>Prioridad</th>
                             <th>Fecha de Creación</th>
                             <th>Usuario asignado</th>
+                            <th>Tiempo de Resolución</th>
                             <th>Acciones</th>
                         </tr>
                     </thead> 
@@ -88,6 +89,13 @@
                                 <td>{{ ticket.fecha_creacion }}</td>
                                 <td>
                                     <p>{{ ticket.admin_asignado.nombre|default:"No asignado" }}</p>
+                                </td>
+                                <td>
+                                    {% if ticket.tiempo_resolucion %}
+                                        {{ ticket.tiempo_resolucion }}
+                                    {% else %}
+                                        No definido
+                                    {% endif %}
                                 </td>
                                 <td>
                                     <form method="post">
@@ -119,6 +127,9 @@
                                                 </option>
                                             {% endfor %}
                                         </select>
+
+                                        <label for="fechaResolucion_{{ ticket.id }}">T. Res. (hh:mm):</label>
+                                        <input type="time" name="tiempo_resolucion" id="fechaResolucion_{{ ticket.id }}" required>
 
                                         <button type="submit">Actualizar</button>
                                     </form>

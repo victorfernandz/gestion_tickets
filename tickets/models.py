@@ -86,6 +86,7 @@ class Ticket(models.Model):
         related_name="tickets_asignados"
     )  # Admin que gestiona el ticket
     resolucion = models.TextField(blank=True, null=True)  # Resolución del ticket
+    tiempo_resolucion = models.DurationField(null=True, blank=True)  # Almacena el tiempo de resolución
 
     def __str__(self):
         return f"Ticket {self.id} - {self.tipoCaso.descripcion}"
