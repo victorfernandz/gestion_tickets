@@ -5,9 +5,9 @@ from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.http import JsonResponse
-from .tasks import enviar_correo_admin
-from .tasks import enviar_correo_usuario
+from .tasks import enviar_correo_admin, enviar_correo_usuario, enviar_comentario_ticket 
 from datetime import timedelta
+from django.contrib.auth.hashers import make_password, check_password
 
 # Vista de Login
 def login(request):
@@ -16,18 +16,22 @@ def login(request):
         password = request.POST.get('password')
 
         try:
-            # Valida si el usuario existe
             user = Usuario.objects.get(usuario=username)
 
-            # Verifica la contraseña
-            if password == user.contrasena:
-                # Guarda el usuario en la sesión
+            # Verifica la contraseña usando check_password
+            if check_password(password, user.contrasena):
+                # Redirige al cambio de contraseña si es necesario
+                if user.necesita_cambiar_contrasena:
+                    request.session['user_id'] = user.id
+                    return redirect('cambiar_contrasena', user_id=user.id)
+
+                # Si no necesita cambiar contraseña, procede al home
                 request.session['user_id'] = user.id
-                return redirect('home')  # Redirige al Home
+                return redirect('home')
             else:
-                messages.error(request, 'Usuario o contraseña incorrectos')
+                messages.error(request, 'Usuario o contraseña incorrectos.')
         except Usuario.DoesNotExist:
-            messages.error(request, 'Usuario o contraseña incorrectos')
+            messages.error(request, 'Usuario o contraseña incorrectos.')
 
     return render(request, 'tickets/login.html')
 
@@ -37,7 +41,6 @@ def home(request):
     if not user_id:
         return redirect('login')
 
-    # Recuperar los datos del usuario autenticado
     user = Usuario.objects.get(id=user_id)
     return render(request, 'tickets/home.html', {'user': user})
 
@@ -45,6 +48,39 @@ def home(request):
 def logout(request):
     request.session.flush()  
     return redirect('login')
+
+# Vista para cambiar la contraseña
+def cambiar_contrasena(request, user_id):
+    usuario = get_object_or_404(Usuario, id=user_id)
+
+    if request.method == 'POST':
+        contrasena_actual = request.POST.get('contrasena_actual')
+        nueva_contrasena = request.POST.get('nueva_contrasena')
+        confirmar_contrasena = request.POST.get('confirmar_contrasena')
+
+        # Verifica la contraseña actual
+        if not check_password(contrasena_actual, usuario.contrasena):
+            messages.error(request, 'La contraseña actual es incorrecta.')
+            return redirect('cambiar_contrasena', user_id=user_id)
+
+        # Verifica que las contraseñas coincidan
+        if nueva_contrasena != confirmar_contrasena:
+            messages.error(request, 'Las contraseñas no coinciden.')
+            return redirect('cambiar_contrasena', user_id=user_id)
+        
+        if nueva_contrasena == contrasena_actual:
+            messages.error(request, 'La nueva contraseña no puede ser igual a la actual.')
+            return redirect('cambiar_contrasena', user_id=user_id)
+
+        # Cifra y guarda la nueva contraseña
+        usuario.contrasena = make_password(nueva_contrasena)
+        usuario.necesita_cambiar_contrasena = False
+        usuario.save()
+
+        messages.success(request, '¡Contraseña actualizada con éxito!')
+        return redirect('home')
+
+    return render(request, 'tickets/cambiar_contrasena.html', {'usuario': usuario})
 
 # Creción de tickets
 def crear_ticket(request):
@@ -133,7 +169,6 @@ def crear_ticket(request):
             messages.success(request, 'Ticket creado con éxito.')
             return redirect('listar_tickets')
 
-
      # Si es un GET normal, mostrar el formulario sin AJAX
     tipo_categoria = Categoria.objects.all()
     return render(request, 'tickets/crear_ticket.html', {'tipo_categoria': tipo_categoria})
@@ -164,7 +199,7 @@ def administrar_tickets(request):
         return redirect('home')
 
     tickets = Ticket.objects.all().order_by('id')
-    administradores = Usuario.objects.filter(rol__descripcion='ADMIN')  # Obtener todos los administradores
+    administradores = Usuario.objects.filter(rol__descripcion='ADMIN')
 
     # Filtros
     filtro_estado = request.GET.get('estado')
@@ -183,7 +218,7 @@ def administrar_tickets(request):
         ticket_id = request.POST.get('ticket_id')
         nuevo_estado = request.POST.get('nuevo_estado')
         nueva_prioridad = request.POST.get('nueva_prioridad')
-        nuevo_admin_id = request.POST.get('nuevo_admin')  # ID del administrador seleccionado
+        nuevo_admin_id = request.POST.get('nuevo_admin')
         comentario_texto = request.POST.get('comentario')
         nuevo_tiempo_resolucion = request.POST.get('tiempo_resolucion')
 
@@ -231,7 +266,7 @@ def administrar_tickets(request):
 
     return render(request, 'tickets/administrar_tickets.html', {
         'tickets': tickets,
-        'administradores': administradores  # Pasar administradores al contexto
+        'administradores': administradores 
     })
 
 # Vista de Seguimiento del Ticket
@@ -241,46 +276,52 @@ def seguimiento_ticket(request, ticket_id):
         return redirect('login')
 
     ticket = get_object_or_404(Ticket, id=ticket_id)
-
-    # Verifica que el usuario sea el creador del ticket
     usuario = Usuario.objects.get(id=user_id)
-    if usuario != ticket.usuario and usuario.rol.descripcion != 'ADMIN':
+
+    # Verifica si es el propietario o Admin
+    if usuario != ticket.usuario and (not usuario.rol or usuario.rol.descripcion != 'ADMIN'):
         messages.error(request, 'No tienes permiso para ver este ticket.')
         return redirect('home')
 
     if request.method == 'POST':
         comentario_texto = request.POST.get('comentario')
         if comentario_texto:
-            # Crea el comentario
-            Comentario.objects.create(ticket=ticket, usuario=usuario, texto=comentario_texto)
+            # Creación de comentario
+            comentario = Comentario.objects.create(ticket=ticket, usuario=usuario, texto=comentario_texto)
 
-            # Determina el destinatario del correo
-            destinatario = (
-                ticket.admin_asignado.email if usuario == ticket.usuario else ticket.usuario.email
+            # Genera un mensaje para el Admin
+            mensaje_admin = render_to_string('tickets/email_template_admin_comentario.html', {
+                'ticket_id': ticket.id,
+                'usuario': usuario,
+                'tipoCaso': ticket.tipoCaso.descripcion,
+                'comentario': comentario.texto,
+                'prioridad': ticket.get_prioridad_display(),
+            })
+
+            # Genera un mensaje para el usuario
+            mensaje_usuario = render_to_string('tickets/email_template_user_comentario.html', {
+                'ticket_id': ticket.id,
+                'tipoCaso': ticket.tipoCaso.descripcion,
+                'comentario': comentario.texto,
+                'prioridad': ticket.get_prioridad_display(),
+            })
+
+            # Envía correo al Admin
+            enviar_correo_admin.delay(
+                ticket.id,
+                'soporte@altamiragroup.com.py',
+                mensaje_admin
             )
 
-            # Prepara y envia el correo
-            try:
-                subject = f"Nuevo comentario en el Ticket con ID: {ticket.id}"
-                message = render_to_string('tickets/email_comentario.html', {
-                    'ticket': ticket,
-                    'comentario': comentario_texto,
-                    'usuario': usuario
-                })
-                email = EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, [destinatario])
-                email.content_subtype = 'html'
-                email.send()
-            #    messages.success(request, 'Comentario añadido y notificado.')
-            except Exception as e:
-                print(f"Error al enviar correo: {e}")
-                messages.error(request, 'El comentario fue guardado, pero no se pudo enviar la notificación por correo.')
-        else:
-            messages.error(request, 'El comentario no puede estar vacío.')
+            # Envía correo al usuario
+            enviar_correo_usuario.delay(
+                ticket.id,
+                ticket.usuario.email,
+                mensaje_usuario
+            )
 
-    # Se muestran los comentarios en orden cronológico
     comentarios = ticket.comentarios.all().order_by('fecha_creacion')
-
     return render(request, 'tickets/seguimiento_ticket.html', {
         'ticket': ticket,
-        'comentarios': comentarios
+        'comentarios': comentarios,
     })

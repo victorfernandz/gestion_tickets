@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Comentario en Ticket {{ ticket_id }}</title>
+</head>
+<body>
+    <h2>Nuevo comentario en el Ticket ID: {{ ticket_id }}</h2>
+    
+    <p><strong>Usuario que comentó:</strong> {{ usuario.nombre }} {{ usuario.apellido }}</p>
+    <p><strong>Tipo de caso:</strong> {{ tipoCaso }}</p>
+    <p><strong>Prioridad:</strong> {{ prioridad }}</p>
+
+    <hr>
+    <p><strong>Comentario:</strong> {{ comentario }}</p>
+
+    <br>
+    <p>Saludos,<br>Equipo de Soporte</p>
+</body>
+</html>

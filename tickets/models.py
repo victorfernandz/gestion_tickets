@@ -9,7 +9,6 @@ class Departamento(models.Model):
     def __str__(self):
         return self.descripcion
 
-
 # Tabla de Roles
 class Rol(models.Model):
     id = models.AutoField(primary_key=True)
@@ -18,7 +17,6 @@ class Rol(models.Model):
     def __str__(self):
         return self.descripcion
 
-
 # Tabla de Usuarios
 class Usuario(models.Model):
     id = models.AutoField(primary_key=True)
@@ -26,14 +24,13 @@ class Usuario(models.Model):
     email = models.CharField(max_length=50, blank=False, null=False, default='example@altamiragroup.com.py', validators=[EmailValidator(message="Ingrese un correo válido.")])
     nombre = models.CharField(max_length=255)
     apellido = models.CharField(max_length=255, blank=True)
-    cedula = models.CharField(max_length=10, blank=True)
     departamento = models.ForeignKey(Departamento, on_delete=models.CASCADE)
     rol = models.ForeignKey(Rol, on_delete=models.CASCADE)
     contrasena = models.CharField(max_length=128)
+    necesita_cambiar_contrasena = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.nombre} {self.apellido} ({self.usuario})"
-
 
 # Tabla de Categorías
 class Categoria(models.Model):
@@ -43,7 +40,6 @@ class Categoria(models.Model):
     def __str__(self):
         return f"{self.id} - {self.descripcion}"
 
-
 # Tabla Tipo de Casos
 class Casos(models.Model):
     id = models.AutoField(primary_key=True)
@@ -52,7 +48,6 @@ class Casos(models.Model):
 
     def __str__(self):
         return f"{self.id} - {self.descripcion}"
-
 
 # Tabla de Tickets
 class Ticket(models.Model):
@@ -90,7 +85,6 @@ class Ticket(models.Model):
 
     def __str__(self):
         return f"Ticket {self.id} - {self.tipoCaso.descripcion}"
-
 
 # Tabla de Comentarios
 class Comentario(models.Model):

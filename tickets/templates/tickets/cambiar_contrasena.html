@@ -1,0 +1,49 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cambiar contraseña</title>
+    <link rel="stylesheet" href="{% static 'tickets/css/style.css' %}">
+</head>
+<body>
+    <header class="navbar">
+        <div class="navbar-title">
+            <h1>Cambiar contraseña</h1>
+        </div>
+    </header>
+    <main class="content">
+        <div class="pass-container">
+            <br><br><br>
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group-pass">
+                    <label for="contrasena_actual">Contraseña actual:</label>
+                    <input type="password" id="contrasena_actual" name="contrasena_actual" required>
+                </div>
+                <div class="form-group-pass">
+                    <label for="nueva_contrasena">Nueva contraseña:</label>
+                    <input type="password" id="nueva_contrasena" name="nueva_contrasena" required>
+                </div>
+                <div class="form-group-pass">
+                    <label for="confirmar_contrasena">Confirmar nueva contraseña:</label>
+                    <input type="password" id="confirmar_contrasena" name="confirmar_contrasena" required>
+                </div>
+                <br>
+                <div class="form-actions">
+                    <button type="submit">Guardar cambios</button>
+                </div>
+            </form>
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <p class="error-message">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </main>
+</body>
+</html>

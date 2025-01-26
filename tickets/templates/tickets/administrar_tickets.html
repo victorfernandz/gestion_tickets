@@ -76,6 +76,7 @@
                             <th>Usuario asignado</th>
                             <th>Tiempo de Resolución</th>
                             <th>Acciones</th>
+                            <th>Cambiar Contraseña</th>
                         </tr>
                     </thead> 
                     <br>
@@ -129,15 +130,21 @@
                                         </select>
 
                                         <label for="fechaResolucion_{{ ticket.id }}">T. Res. (hh:mm):</label>
-                                        <input type="time" name="tiempo_resolucion" id="fechaResolucion_{{ ticket.id }}" required>
+                                        <input type="time" name="tiempo_resolucion" id="fechaResolucion_{{ ticket.id }}">
 
                                         <button type="submit">Actualizar</button>
                                     </form>
                                 </td>
+                                <td>
+                                    <!-- Botón para cambiar contraseña -->
+                                    <form method="get" action="{% url 'cambiar_contrasena' ticket.usuario.id %}">
+                                        <button type="submit">Cambiar Contraseña</button>
+                                    </form>                                    
+                                </td>
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="7">No hay tickets disponibles.</td>
+                                <td colspan="8">No hay tickets disponibles.</td>
                             </tr>
                         {% endfor %}
                     </tbody>

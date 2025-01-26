@@ -1,6 +1,9 @@
 from celery import shared_task
 from django.core.mail import EmailMessage
 from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 @shared_task
 def enviar_correo_admin(ticket_id, admin_email, mensaje_admin):
@@ -24,7 +27,7 @@ def enviar_correo_usuario(ticket_id, usuario_email, mensaje_usuario):
         user_email_msg = EmailMessage(
             subject=f"Confirmación de Creación de Ticket con ID: {ticket_id}",
             body=mensaje_usuario,
-            from_email=settings.DEFAULT_FROM_EMAIL,
+            from_email=settings.DEFAULT_FROM_EMAIL, 
             to=[usuario_email]
         )
         user_email_msg.content_subtype = 'html'
@@ -32,3 +35,22 @@ def enviar_correo_usuario(ticket_id, usuario_email, mensaje_usuario):
         return "Correo enviado al usuario exitosamente"
     except Exception as e:
         return f"Error al enviar correo al usuario: {str(e)}"
+
+@shared_task
+def enviar_comentario_ticket(subject, message, destinatarios):
+    try:
+        from_email = settings.DEFAULT_FROM_EMAIL
+        email_msg = EmailMessage(
+            subject=subject,
+            body=message,
+            from_email=from_email,
+            to=destinatarios
+        )
+        email_msg.content_subtype = 'html'
+        email_msg.send()
+
+        logger.info(f"Correo enviado a {', '.join(destinatarios)}")
+        return f"Correo enviado a {', '.join(destinatarios)}"
+    except Exception as e:
+        logger.error(f"Error al enviar correo: {e}")
+        return f"Error al enviar correo: {str(e)}"

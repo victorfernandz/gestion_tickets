@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -45,7 +46,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware', 
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -141,6 +142,9 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
 # Configuración de Celery
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  # URL del broker (Redis)
-CELERY_ACCEPT_CONTENT = ['json']  # Formato de los mensajes
-CELERY_TASK_SERIALIZER = 'json'  # Serializador para las tareas
+# settings.py
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Reemplaza con tu broker si es diferente
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
