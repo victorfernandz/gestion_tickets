@@ -1,0 +1,25 @@
+{% load static %}
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Actualización de tu Ticket</title>
+</head>
+<body>
+    <h2>Actualización en tu Ticket #{{ ticket.id }}</h2>
+    <p><strong>Estado:</strong> {{ ticket.get_estado_display }}</p>
+    <p><strong>Prioridad:</strong> {{ ticket.get_prioridad_display }}</p>
+    <p><strong>Horario Asignado:</strong> {{ ticket.horario_asignacion }}</p>
+    <p>Fecha de Actualización: {{ ticket.fecha_modificacion }}</p>
+
+    <br>
+    <p><strong>Ver detalles del ticket:</strong> 
+        <a href="{{ ticket_url }}" target="_blank">
+            Click aquí para ver el ticket
+        </a>
+    </p>
+    <br>
+    <p>Saludos,<br>Equipo de Soporte</p>
+    
+</body>
+</html>

@@ -51,6 +51,15 @@
                         <option value="3">En espera de feedback</option>
                         <option value="4">Cerrado</option>
                     </select>
+
+                    <label for="categoria">Categoría:</label>
+                    <select name="categoria" id="categoria">
+                        <option value="">Todas</option>
+                        {% for categoria in categorias %}
+                            <option value="{{ categoria.id }}">{{ categoria.descripcion }}</option>
+                        {% endfor %}
+                    </select>                    
+
                     <label for="prioridad">Prioridad:</label>
                     <select name="prioridad" id="prioridad">
                         <option value="">Todas</option>
@@ -59,6 +68,17 @@
                         <option value="3">Alto</option>
                         <option value="4">Muy Alto</option>
                     </select>
+
+                    <br><br>
+
+                    <label for="admin_asignado">Administrador:</label>
+                    <select name="admin_asignado" id="admin_asignado">
+                        <option value="">Todos</option>
+                        {% for admin in administradores %}
+                            <option value="{{ admin.id }}">{{ admin.nombre }} {{ admin.apellido }}</option>
+                        {% endfor %}
+                    </select>
+
                     <label for="fecha">Fecha:</label>
                     <input type="date" name="fecha" id="fecha">                    
                     <button type="submit">Filtrar</button>
@@ -71,10 +91,12 @@
                             <th>ID</th>
                             <th>Usuario creador</th>
                             <th>Estado</th>
+                            <th>Categoria</th>
                             <th>Prioridad</th>
                             <th>Fecha de Creación</th>
                             <th>Usuario asignado</th>
-                            <th>Tiempo de Resolución</th>
+                            <th>Hora asignación</th>
+                            <th>Tiempo Resolución</th>
                             <th>Acciones</th>
                             <th>Cambiar Contraseña</th>
                         </tr>
@@ -86,11 +108,20 @@
                                 <td><a href="{% url 'seguimiento_ticket' ticket.id %}">{{ ticket.id }}</a></td>
                                 <td>{{ ticket.usuario.nombre }}</td>
                                 <td>{{ ticket.get_estado_display }}</td>
+                                <td>{{ ticket.categoria.descripcion }}</td>
                                 <td>{{ ticket.get_prioridad_display }}</td>
                                 <td>{{ ticket.fecha_creacion }}</td>
                                 <td>
                                     <p>{{ ticket.admin_asignado.nombre|default:"No asignado" }}</p>
                                 </td>
+                                <td>
+                                    {% if ticket.horario_asignacion %}
+                                        {{ ticket.horario_asignacion }}
+                                    {% else %}
+                                        No definido
+                                    {% endif %}
+                                </td>
+
                                 <td>
                                     {% if ticket.tiempo_resolucion %}
                                         {{ ticket.tiempo_resolucion }}
@@ -129,7 +160,10 @@
                                             {% endfor %}
                                         </select>
 
-                                        <label for="fechaResolucion_{{ ticket.id }}">T. Res. (hh:mm):</label>
+                                        <label for="horaAsig_{{ ticket.id }}">Hora Asig.:</label>
+                                        <input type="time" name="horario_asignacion" id="horaAsig_{{ ticket.id }}">
+
+                                        <label for="fechaResolucion_{{ ticket.id }}">Tiempo Res.:</label>
                                         <input type="time" name="tiempo_resolucion" id="fechaResolucion_{{ ticket.id }}">
 
                                         <button type="submit">Actualizar</button>
@@ -150,6 +184,22 @@
                     </tbody>
                 </table>
             </div>
+            <br><br>
+            <!-- Paginador -->
+            <div class="pagination">
+                {% if tickets.has_previous %}
+                    <a href="?pagina=1">&laquo; Primera</a>
+                    <a href="?pagina={{ tickets.previous_page_number }}">Anterior</a>
+                {% endif %}
+
+                <span>Página {{ tickets.number }} de {{ tickets.paginator.num_pages }}</span>
+
+                {% if tickets.has_next %}
+                    <a href="?pagina={{ tickets.next_page_number }}">Siguiente</a>
+                    <a href="?pagina={{ tickets.paginator.num_pages }}">Última &raquo;</a>
+                {% endif %}
+            </div>
+
         </main>
     </div>
 </body>

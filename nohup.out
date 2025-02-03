@@ -12,3 +12,25 @@ Django version 5.1, using settings 'gestion_tickets.settings'
 Starting development server at http://0.0.0.0:8000/
 Quit the server with CONTROL-C.
 
+ 
+ -------------- celery@srv-soporte v5.4.0 (opalescent)
+--- ***** ----- 
+-- ******* ---- Linux-6.8.0-41-generic-x86_64-with-glibc2.39 2025-01-29 13:39:49
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         gestion_tickets:0x76b9616ebe30
+- ** ---------- .> transport:   redis://localhost:6379/0
+- ** ---------- .> results:     redis://localhost:6379/0
+- *** --- * --- .> concurrency: 1 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . gestion_tickets.celery.debug_task
+  . tickets.tasks.enviar_comentario_ticket
+  . tickets.tasks.enviar_correo_admin
+  . tickets.tasks.enviar_correo_usuario
+

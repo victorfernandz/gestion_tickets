@@ -6,6 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'tickets/imagenes/favicon.ico' %}">
     <link rel="stylesheet" href="{% static 'tickets/css/style.css' %}">
 </head>
 <body>
@@ -13,6 +14,7 @@
     <header class="navbar">
         <div class="logo">
             <img src="{% static 'tickets/imagenes/logo.jpeg' %}" alt="Logo" class="logo-img">
+        <!--    <img src="{% static 'tickets/imagenes/favicon-32x32.png' %}" alt="Logo" class="logo-img">-->
         </div>
         <div class="navbar-title">
             <h1>Gestión de Tickets</h1>
@@ -45,6 +47,19 @@
                 <p>Departamento: {{ user.departamento.descripcion }}</p>
                 <p>Seleccione una opción del menú para continuar.</p>
             </div>
+<!--
+            <div class="tipo-problema">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Prioridad</th>
+                            <th>Detalle</th>
+                            <th>Tiempo Respuesta</th>
+                            <th>Tiempo de Solución</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>-->
         </main>
     </div>
 </body>

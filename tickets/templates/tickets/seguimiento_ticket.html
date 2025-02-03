@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seguimiento del Ticket {{ ticket.id }}</title>
     <link rel="stylesheet" href="{% static 'tickets/css/style.css' %}">
+    <script src="{% static 'tickets/js/script.js' %}" defer></script>
 </head>
 <body>
     <!-- Barra superior -->
@@ -44,6 +45,8 @@
             <h1>Seguimiento del Ticket {{ ticket.id }}</h1>
             <p><strong>Estado:</strong> {{ ticket.get_estado_display }}</p>
             <p><strong>Prioridad:</strong> {{ ticket.get_prioridad_display }}</p>
+            <p><strong>Categoría:</strong> {{ ticket.categoria.descripcion }}</p>
+            <p><strong>Tipo de caso:</strong> {{ ticket.tipoCaso.descripcion }}</p>
             <p>
                 <strong>Usuario de soporte asignado:</strong>
                 {% if ticket.admin_asignado %}
@@ -54,28 +57,55 @@
             </p>
             <p><strong>Descripción:</strong> {{ ticket.descripcion }}</p>
 
+            <!-- Comentarios -->
             <h2>Comentarios</h2>
             <ul>
                 {% for comentario in comentarios %}
                     <li>
-                        <strong>{{ comentario.usuario.nombre }}</strong>: {{ comentario.texto }}
-                        <!-- <em>({{ comentario.fecha_creacion|date:"d-m-Y H:i" }})</em> -->
+                        <strong>{{ comentario.usuario.apellido }}, {{ comentario.usuario.nombre }}</strong>: {{ comentario.texto }}
                     </li>
                 {% empty %}
                     <li>No hay comentarios para este ticket.</li>
                 {% endfor %}
             </ul>
-            
-            <div class="form-group">
-            {% if ticket.estado != 4 %}
 
-                <form method="post" action="{% url 'seguimiento_ticket' ticket.id %}">
+            <!-- Formulario para agregar comentarios -->
+            <div class="form-group">
+                {% if ticket.estado != 4 %}
+                    <h2>Agregar comentario</h2>
+                    <form method="post" action="{% url 'seguimiento_ticket' ticket.id %}">
+                        {% csrf_token %}
+                        <textarea id="comentario" name="comentario" rows="4" placeholder="Escribe un comentario..." required></textarea> 
+                        <br><br><button type="submit" class="btn-agregar">Agregar comentario</button>
+                    </form>                
+                {% endif %}
+            </div>    
+
+            <!-- Mostrar archivos adjuntos -->
+            <h2>Archivos adjuntos</h2>
+            {% if archivos %}
+                <ul>
+                    {% for archivo in archivos %}
+                        <li>
+                            📂 <a href="{{ archivo.archivo.url }}" target="_blank" download>{{ archivo.archivo.name }}</a>
+            <!--                <button class="btn-eliminar" data-id="{{ archivo.id }}" title="Eliminar archivo">🗑️</button>
+            -->            </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No hay archivos adjuntos.</p>
+            {% endif %}
+
+            <!-- Formulario para subir archivos -->
+            {% if ticket.estado != 4 %}
+                <h2>Subir archivo</h2>
+                <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
-                    <textarea id="comentario" name="comentario" rows="4" placeholder="Escribe un comentario..." required></textarea> 
-                    <br><br><button type="submit" class="btn-agregar">Agregar comentario</button>
-                </form>                
-            {% endif %} 
-            </div>
+                    <input type="file" name="archivo" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx" required>
+                    <br><br>
+                    <button type="submit" class="btn-agregar">Subir archivo</button>
+                </form>
+            {% endif %}
         </div>
     </main>
 </body>

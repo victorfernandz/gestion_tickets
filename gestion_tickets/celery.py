@@ -1,27 +1,40 @@
 from __future__ import absolute_import, unicode_literals
 import os
+import logging
 from celery import Celery
 
-# Configuración para usar el archivo settings.py de Django
+# Configuración de Django para Celery
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gestion_tickets.settings')
 
 app = Celery('gestion_tickets')
 
-# Lee la configuración de Celery desde settings.py con el prefijo CELERY_
+# Configurar Celery para leer las configuraciones desde settings.py
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
-# Auto-descubre tareas definidas en aplicaciones instaladas
+# Zona horaria correcta
+app.conf.timezone = 'America/Asuncion'
+
+# Auto-descubre tareas en las aplicaciones instaladas de Django
 app.autodiscover_tasks()
+
+# Configuración de LOGGING para Celery
+logger = logging.getLogger('celery')
+logger.setLevel(logging.INFO)
+
+# Formato de logs
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+# Guardar logs en un archivo
+log_file = "/var/log/celery/celery.log"  # Ruta donde se guardarán los logs
+file_handler = logging.FileHandler(log_file)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+# Loggear errores en consola
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
 
 @app.task(bind=True)
 def debug_task(self):
-    print(f'Request: {self.request!r}')
-
-
-app.conf.update(
-    task_annotations={
-        'tickets.tasks.enviar_correo': {'rate_limit': '10/m'}
-    },
-    task_default_retry_delay=300,  # Retraso entre reintentos (5 minutos)
-    task_max_retries=5,  # Máximo de reintentos
-)
+    logger.info(f'Debug Task ejecutada: {self.request!r}')

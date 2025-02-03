@@ -35,18 +35,22 @@
             </nav>
             <!-- Botón de cerrar sesión -->
             <div class="logout-container">
-                <a href="{% url 'logout' %}" class="logout-button">Cerrar Sesión</a>
+                <a href="{% url 'logout' %}" class="logout-button">Cerrar sesión</a>
             </div>
         </div>
 
         <!-- Contenido dinámico -->
         <main class="content">
             <div class="form-container">
-                <h1>Crear Nuevo Ticket</h1>
-                <form method="post">
+                <h1>Crear nuevo ticket</h1>
+                
+                <!-- Formulario para crear un ticket con archivos adjuntos -->
+                <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
+
+                    <!-- Categoría -->
                     <div class="form-group">
-                        <label for="categoria">Seleccione la Categoría</label>
+                        <label for="categoria">Seleccione la categoría</label>
                         <select id="categoria" name="categoria" required>
                             <option value="">Seleccione una opción</option>
                             {% for categoria in tipo_categoria %}
@@ -55,13 +59,15 @@
                         </select>
                     </div>
 
+                    <!-- Tipo de Caso -->
                     <div class="form-group">
-                        <label for="tipoCaso">Seleccione el Tipo de Caso:</label>
+                        <label for="tipoCaso">Seleccione el tipo de caso:</label>
                         <select id="tipoCaso" name="tipoCaso" required>
                             <option value="">Seleccione un caso</option>
                         </select>                        
                     </div>
                     
+                    <!-- Descripción del inconveniente -->
                     <div class="form-group">
                         <label for="descripcion">Descripción del inconveniente:</label>
                         <textarea id="descripcion" name="descripcion" rows="5" placeholder="Escriba una descripción detallada" maxlength="500" required></textarea>
@@ -70,6 +76,7 @@
                         </div>
                     </div>                    
 
+                    <!-- Prioridad -->
                     <div class="form-group">
                         <label for="prioridad">Prioridad:</label>
                         <select id="prioridad" name="prioridad" required>
@@ -80,13 +87,21 @@
                         </select>
                     </div>
 
+                    <!-- Estado (Siempre abierto en la creación) -->
                     <div class="form-group-estado">
                         <label for="estado">Estado:</label>
                         <input type="text" id="estado" name="estado" value="Abierto" readonly>
                     </div>
 
+                    <!-- Subida de archivos -->
+                    <div class="form-group">
+                        <label for="archivo">Adjuntar archivo (opcional):</label>
+                        <input type="file" id="archivo" name="archivo" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx">
+                    </div>
+
+                    <!-- Botón para enviar el formulario -->
                     <div class="form-actions">
-                        <button type="submit" class="btn-submit">Crear Ticket</button>
+                        <button type="submit" class="btn-submit">Crear ticket</button>
                     </div>
                 </form>
             </div>
