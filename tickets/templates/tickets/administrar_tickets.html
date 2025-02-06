@@ -105,7 +105,7 @@
                     <tbody>
                         {% for ticket in tickets %}
                             <tr>
-                                <td><a href="{% url 'seguimiento_ticket' ticket.id %}">{{ ticket.id }}</a></td>
+                                <td><a href="{% url 'seguimiento_ticket' ticket.id %}" target="_blank">{{ ticket.id }}</a></td>
                                 <td>{{ ticket.usuario.nombre }}</td>
                                 <td>{{ ticket.get_estado_display }}</td>
                                 <td>{{ ticket.categoria.descripcion }}</td>

@@ -8,8 +8,6 @@ from django.contrib.auth.hashers import make_password, check_password
 from .tasks import (enviar_correo_admin, enviar_correo_usuario)
 from django.core.paginator import Paginator
 from django.urls import reverse
-from django.views.decorators.csrf import csrf_exempt
-import os
 
 # Vista de Login
 def login(request):
@@ -123,7 +121,7 @@ def crear_ticket(request):
         descripcion = request.POST.get('descripcion')
         prioridad = request.POST.get('prioridad')
         categoria_id = request.POST.get('categoria')
-        archivo = request.FILES.get("archivo")
+#        archivo = request.FILES.get("archivo")
 
         if not tipo_caso_id or not descripcion or not categoria_id:
             messages.error(request, 'Todos los campos son obligatorios.')
@@ -137,20 +135,16 @@ def crear_ticket(request):
                 descripcion=descripcion,
                 estado=1,
                 prioridad=prioridad,
-                archivo=archivo,
             )
+
+            # Guardar archivo si se adjuntó
+            #if archivo:
+            #    ArchivoAdjunto.objects.create(ticket=ticket, archivo=archivo)
 
             # Generar los mensajes para los correos
             mensaje_admin = render_to_string('tickets/email_template.html', {
                 'ticket_id': ticket.id,
                 'usuario': usuario, 
-                'tipoCaso': tipo_caso.descripcion,
-                'descripcion': descripcion,
-                'prioridad': ticket.get_prioridad_display(),
-            })
-
-            mensaje_usuario = render_to_string('tickets/email_template_user.html', {
-                'ticket_id': ticket.id,
                 'tipoCaso': tipo_caso.descripcion,
                 'descripcion': descripcion,
                 'prioridad': ticket.get_prioridad_display(),
@@ -164,14 +158,20 @@ def crear_ticket(request):
                 'No responda este correo - Se ha creado un nuevo ticket'
             )
 
+            mensaje_usuario = render_to_string('tickets/email_template_user.html', {
+                'ticket_id': ticket.id,
+                'tipoCaso': tipo_caso.descripcion,
+                'descripcion': descripcion,
+                'prioridad': ticket.get_prioridad_display(),
+            })            
+
             enviar_correo_usuario.delay(
                 ticket.id, 
                 usuario.email, 
                 mensaje_usuario,
-                'No responde este correo - Se ha creado un nuevo ticket'
+                'No responda este correo - Se ha creado un nuevo ticket'
             )
 
-#            messages.success(request, 'Ticket creado con éxito.')
             return redirect('listar_tickets')
 
      # Si es un GET normal, mostrar el formulario sin AJAX
@@ -276,11 +276,20 @@ def administrar_tickets(request):
 
         ticket.save()
 
+        # REFRESCAR el objeto para asegurar que Django reconozca los valores como choices
+        ticket.refresh_from_db()
+
+        # Obtener la descripción del estado y la prioridad
+        estado_descripcion = ticket.get_estado_display()
+        prioridad_descripcion = ticket.get_prioridad_display()
+
         # Enviar correos si se asignó un administrador y horario de asignación
         if ticket.admin_asignado and nuevo_horario_asignacion:
             mensaje_admin = render_to_string('tickets/email_actualizacion_admin.html', {
                 'ticket': ticket,
                 'horario': nuevo_horario_asignacion,
+                'estado' : estado_descripcion,
+                'prioridad' : prioridad_descripcion,
                 'admin_usuario': usuario,
                 'ticket_url' : ticket_url,
             })
@@ -289,12 +298,14 @@ def administrar_tickets(request):
                 ticket.id,
                 ticket.admin_asignado.email,
                 mensaje_admin,
-                'No responda este correo - Se ha actualizado su ticket'
+                'Se le ha asignado el ticket'
             )
 
             mensaje_usuario = render_to_string('tickets/email_actualizacion_user.html', {
                 'ticket': ticket,
                 'horario': nuevo_horario_asignacion,
+                'estado' : estado_descripcion,
+                'prioridad' : prioridad_descripcion,
                 'ticket_url' : ticket_url,
             })
 
@@ -305,7 +316,6 @@ def administrar_tickets(request):
                 'No responda este correo - Se ha actualizado su ticket'
             )
 
-#        messages.success(request, 'Ticket actualizado y notificaciones enviadas con éxito.')
         return redirect('administrar_tickets')
 
     return render(request, 'tickets/administrar_tickets.html', {
@@ -336,6 +346,17 @@ def seguimiento_ticket(request, ticket_id):
         portal_url = "http://192.168.0.25"
         ticket_url = f"{portal_url}{reverse('seguimiento_ticket', args=[ticket.id])}"
 
+        # Extraer datos serializables del usuario
+        usuario_data = {
+            'id': usuario.id,
+            'nombre': usuario.nombre,
+            'apellido': usuario.apellido,
+            'email': usuario.email
+        }
+
+        # Obtener el correo del administrador asignado al ticket
+        admin_email = ticket.admin_asignado.email if ticket.admin_asignado else "soporte@altamiragroup.com.py"
+
         # Manejo de comentarios
         if comentario_texto:
             comentario = Comentario.objects.create(ticket=ticket, usuario=usuario, texto=comentario_texto)
@@ -343,26 +364,25 @@ def seguimiento_ticket(request, ticket_id):
             # Enviar correos
             mensaje_admin = render_to_string('tickets/email_template_admin_comentario.html', {
                 'ticket_id': ticket.id,
-                'usuario': usuario,
+                'usuario': usuario_data,
                 'tipoCaso': ticket.tipoCaso.descripcion,
                 'comentario': comentario.texto,
                 'prioridad': ticket.get_prioridad_display(),
                 'ticket_url': ticket_url,
             })
 
+            enviar_correo_admin.delay(ticket.id, admin_email, mensaje_admin, 'Se ha actualizado su ticket')
+            
             mensaje_usuario = render_to_string('tickets/email_template_user_comentario.html', {
                 'ticket_id': ticket.id,
-                'usuario': usuario,
+                'usuario': usuario_data,
                 'tipoCaso': ticket.tipoCaso.descripcion,
                 'comentario': comentario.texto,
                 'prioridad': ticket.get_prioridad_display(),
                 'ticket_url': ticket_url,
             })
-
-            enviar_correo_admin.delay(ticket.id, 'soporte@altamiragroup.com.py', mensaje_admin, 'No responda este corre - Se ha actualizado su ticket')
+            
             enviar_correo_usuario.delay(ticket.id, ticket.usuario.email, mensaje_usuario, 'No responda este correo - Se ha actualizado su ticket')
-
-#            messages.success(request, "Comentario agregado correctamente.")
 
         # Manejo de subida de archivos
         if archivo:
@@ -371,13 +391,13 @@ def seguimiento_ticket(request, ticket_id):
             # Enviar correos para el archivo adjunto
             mensaje_archivo = render_to_string('tickets/email_template_admin_comentario.html', {
                 'ticket_id': ticket.id,
-                'usuario': usuario,
+                'usuario': usuario_data,
                 'tipoCaso': ticket.tipoCaso.descripcion,
                 'archivo': archivo_adjunto.archivo.name,
                 'ticket_url': ticket_url,
             })
 
-            enviar_correo_admin.delay(ticket.id, 'soporte@altamiragroup.com.py', mensaje_archivo, 'Se ha actualizado su ticket')
+            enviar_correo_admin.delay(ticket.id, admin_email, mensaje_archivo, 'Se ha actualizado su ticket')
 
         if not comentario_texto and not archivo:
             messages.error(request, "Debe agregar un comentario o un archivo.")
@@ -393,20 +413,3 @@ def seguimiento_ticket(request, ticket_id):
         'comentarios': comentarios,
         'archivos': archivos,
     })
-
-@csrf_exempt
-def eliminar_archivo(request, archivo_id):
-    if request.method == 'DELETE':
-        archivo = get_object_or_404(ArchivoAdjunto, id=archivo_id)
-
-        # Eliminar físicamente el archivo del sistema
-        if archivo.archivo:
-            ruta_archivo = archivo.archivo.path
-            if os.path.exists(ruta_archivo):
-                os.remove(ruta_archivo)
-
-        # Eliminar de la base de datos
-        archivo.delete()
-        return JsonResponse({'success': True, 'message': 'Archivo eliminado correctamente.'})
-
-    return JsonResponse({'success': False, 'message': 'Método no permitido'}, status=405)

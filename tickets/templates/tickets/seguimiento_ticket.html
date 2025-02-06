@@ -88,8 +88,7 @@
                     {% for archivo in archivos %}
                         <li>
                             📂 <a href="{{ archivo.archivo.url }}" target="_blank" download>{{ archivo.archivo.name }}</a>
-            <!--                <button class="btn-eliminar" data-id="{{ archivo.id }}" title="Eliminar archivo">🗑️</button>
-            -->            </li>
+                        </li>
                     {% endfor %}
                 </ul>
             {% else %}

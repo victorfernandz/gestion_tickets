@@ -12,7 +12,6 @@ urlpatterns = [
     path('administrar_tickets/', views.administrar_tickets, name='administrar_tickets'),
     path('seguimiento/<int:ticket_id>/', views.seguimiento_ticket, name='seguimiento_ticket'),
     path('cambiar_contrasena/<int:user_id>/', views.cambiar_contrasena, name='cambiar_contrasena'),
-    path('eliminar_archivo/<int:archivo_id>/', views.eliminar_archivo, name='eliminar_archivo'),
 ]
 
 if settings.DEBUG:

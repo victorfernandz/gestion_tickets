@@ -8,10 +8,18 @@
 </head>
 <body>
     <h2>Actualización en el Ticket #{{ ticket.id }}</h2>
-    <p><strong>Estado:</strong> {{ ticket.estado }}</p>
-    <p><strong>Prioridad:</strong> {{ ticket.prioridad }}</p>
+    <p><strong>Estado:</strong> {{ estado }}</p>
+    <p><strong>Prioridad:</strong> {{ prioridad }}</p>
     <p><strong>Horario Asignado:</strong> {{ ticket.horario_asignacion }}</p>
     <p>Fecha de Actualización: {{ ticket.fecha_modificacion }}</p>
 
+    <br>
+    <p><strong>Ver detalles del ticket:</strong> 
+        <a href="{{ ticket_url }}" target="_blank">
+            Click aquí para ver el ticket
+        </a>
+    </p>
+    <br>
+    
 </body>
 </html>
