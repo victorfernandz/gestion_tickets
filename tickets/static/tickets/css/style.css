@@ -369,3 +369,93 @@ footer {
         padding: 8px 15px;
     }
 }
+
+/* Estilos para el restablecimiento de contraseña */
+.password-reset-link {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.password-reset-link a, .login-link a {
+    color: #000;
+    text-decoration: none;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+.password-reset-link a:hover, .login-link a:hover {
+    color: #797676;
+}
+
+.info-message {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 15px;
+}
+
+.login-link {
+    margin-top: 15px;
+    text-align: center;
+}
+
+/* Estilos para el email de restablecimiento */
+.email-container {
+    max-width: 600px;
+    margin: 0 auto;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 20px;
+}
+
+.email-header {
+    background-color: #323842;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px 5px 0 0;
+    margin: -20px -20px 20px -20px;
+}
+
+.email-button {
+    background-color: #5a5e64;
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 4px;
+    display: inline-block;
+    margin: 20px 0;
+    transition: background-color 0.3s ease;
+}
+
+.email-button:hover {
+    background-color: #000000;
+}
+
+.email-footer {
+    margin-top: 30px;
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.password-reset-link, .login-link {
+    margin-top: 15px;
+    text-align: center;
+    width: 100%; /* Asegura que el div ocupe todo el ancho disponible */
+    display: block; /* Convierte en elemento de bloque */
+}
+
+.password-reset-link a, .login-link a {
+    color: #000;
+    text-decoration: none;
+    font-size: 0.9em;
+    font-weight: bold;
+    display: inline-block; /* Permite centrar el enlace */
+    margin: 0 auto; /* Ayuda con el centrado */
+}
+
+.password-reset-link a:hover, .login-link a:hover {
+    color: #797676;
+}

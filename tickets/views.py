@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.crypto import get_random_string
 from django.contrib import messages
-from .models import Usuario, Ticket, Casos, Categoria, Comentario, ArchivoAdjunto
+from .models import Usuario, Ticket, Casos, Categoria, Comentario, ArchivoAdjunto, TokenRestablecimiento
 from django.template.loader import render_to_string
 from django.http import JsonResponse
 from datetime import timedelta
@@ -283,6 +284,22 @@ def administrar_tickets(request):
         estado_descripcion = ticket.get_estado_display()
         prioridad_descripcion = ticket.get_prioridad_display()
 
+        if nuevo_estado:
+            mensaje_usuario = render_to_string('tickets/email_actualizacion_estado_user.html', {
+                'ticket': ticket,
+                'horario': nuevo_horario_asignacion,
+                'estado' : estado_descripcion,
+                'prioridad' : prioridad_descripcion,
+                'ticket_url' : ticket_url,
+            })
+
+            enviar_correo_usuario.delay(
+                ticket.id,
+                ticket.usuario.email,
+                mensaje_usuario,
+                'No responda este correo - Se ha actualizado su ticket'
+            )
+
         # Enviar correos si se asignó un administrador y horario de asignación
         if ticket.admin_asignado and nuevo_horario_asignacion:
             mensaje_admin = render_to_string('tickets/email_actualizacion_admin.html', {
@@ -322,6 +339,7 @@ def administrar_tickets(request):
         'tickets': tickets,
         'administradores': administradores,
         'categorias': categorias,
+        'estado_seleccionado': filtro_estado,
     })
 
 # Vista de Seguimiento del Ticket
@@ -413,3 +431,84 @@ def seguimiento_ticket(request, ticket_id):
         'comentarios': comentarios,
         'archivos': archivos,
     })
+
+# Restablecer contraseña
+from django.utils.crypto import get_random_string
+
+def solicitar_restablecer_contrasena(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        try:
+            usuario = Usuario.objects.get(email=email)
+            
+            # Crear un token único
+            token = get_random_string(length=50)
+            TokenRestablecimiento.objects.create(
+                usuario=usuario,
+                token=token
+            )
+            
+            # URL para restablecer contraseña
+            reset_url = request.build_absolute_uri(
+                reverse('restablecer_contrasena', args=[token])
+            )
+            
+            # Preparar correo
+            mensaje_html = render_to_string('tickets/email_reset_password.html', {
+                'usuario': usuario,
+                'reset_url': reset_url
+            })
+            
+            # Enviar correo
+            enviar_correo_usuario.delay(
+                0,  # No hay ticket asociado
+                usuario.email,
+                mensaje_html,
+                'Restablecimiento de contraseña'
+            )
+            
+            messages.success(request, 'Se ha enviado un correo con instrucciones para restablecer tu contraseña.')
+            return redirect('login')
+            
+        except Usuario.DoesNotExist:
+            messages.success(request, 'Si el correo existe en nuestro sistema, recibirás instrucciones para restablecer tu contraseña.')
+            return redirect('login')
+    
+    return render(request, 'tickets/solicitar_reset.html')
+
+def restablecer_contrasena(request, token):
+    try:
+        token_obj = TokenRestablecimiento.objects.get(token=token)
+        
+        # Verificar si el token es válido
+        if not token_obj.esta_activo():
+            messages.error(request, 'El enlace para restablecer la contraseña ha expirado.')
+            return redirect('login')
+        
+        usuario = token_obj.usuario
+        
+        if request.method == 'POST':
+            nueva_contrasena = request.POST.get('nueva_contrasena')
+            confirmar_contrasena = request.POST.get('confirmar_contrasena')
+            
+            if nueva_contrasena != confirmar_contrasena:
+                messages.error(request, 'Las contraseñas no coinciden.')
+                return render(request, 'tickets/restablecer_contrasena.html')
+            
+            # Actualizar contraseña
+            usuario.contrasena = make_password(nueva_contrasena)
+            usuario.necesita_cambiar_contrasena = False
+            usuario.save()
+            
+            # Marcar token como usado
+            token_obj.usado = True
+            token_obj.save()
+            
+            messages.success(request, 'Tu contraseña ha sido restablecida exitosamente. Ya puedes iniciar sesión.')
+            return redirect('login')
+        
+        return render(request, 'tickets/restablecer_contrasena.html', {'token': token})
+        
+    except TokenRestablecimiento.DoesNotExist:
+        messages.error(request, 'El enlace para restablecer la contraseña no es válido.')
+        return redirect('login')

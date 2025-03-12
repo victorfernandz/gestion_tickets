@@ -1,4 +1,6 @@
 from django.db import models
+from django.utils import timezone
+from datetime import timedelta
 from django.core.validators import EmailValidator
 
 # Tabla de Departamentos
@@ -102,3 +104,17 @@ class ArchivoAdjunto(models.Model):
 
     def __str__(self):
         return self.archivo.name
+    
+# Restablecimiento de contraseña
+class TokenRestablecimiento(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    token = models.CharField(max_length=100, unique=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    usado = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f"Token para {self.usuario.usuario}"
+    
+    def esta_activo(self):
+        # El token expira después de 24 horas
+        return not self.usado and self.fecha_creacion > timezone.now() - timedelta(hours=24)
