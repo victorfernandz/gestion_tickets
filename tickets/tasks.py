@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 @shared_task(bind=True, max_retries=3)
 def enviar_correo_admin(self, ticket_id, admin_email, mensaje_admin, subject):
     try:
-        from_email = admin_email if admin_email != settings.DEFAULT_FROM_EMAIL else "noreply@altamiragroup.com.py"
+        # Corregir esta línea para usar siempre DEFAULT_FROM_EMAIL
+        from_email = settings.DEFAULT_FROM_EMAIL
         admin_email_msg = EmailMessage(
             subject=f"{subject}, Nro: {ticket_id}",
             body=mensaje_admin,
@@ -19,11 +20,11 @@ def enviar_correo_admin(self, ticket_id, admin_email, mensaje_admin, subject):
         admin_email_msg.content_subtype = 'html'
         admin_email_msg.send()
         return "Correo enviado al administrador exitosamente"
-
+        
     except (smtplib.SMTPException, socket.error) as e:
         logger.error(f"Error al enviar correo al administrador: {e}. Reintentando...")
-        time.sleep(20)  # Espera antes de reintentar
-        raise self.retry(exc=e, countdown=90)  # Reintenta después de 90 segundos
+        time.sleep(20)
+        raise self.retry(exc=e, countdown=90)
     except Exception as e:
         logger.error(f"Fallo crítico en el envío de correo al administrador: {e}")
         return f"Error al enviar correo al administrador: {str(e)}"
