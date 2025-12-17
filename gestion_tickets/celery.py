@@ -25,7 +25,8 @@ logger.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
 # Guardar logs en un archivo
-log_file = "/var/log/celery/celery.log"  # Ruta donde se guardarán los logs
+#log_file = "/var/log/celery/celery.log"  # Ruta donde se guardarán los logs
+log_file = "C:\\Users\\Alix\\celery.log"
 file_handler = logging.FileHandler(log_file)
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)

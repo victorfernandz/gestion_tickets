@@ -12,7 +12,7 @@ urlpatterns = [
     path('administrar_tickets/', views.administrar_tickets, name='administrar_tickets'),
     path('seguimiento/<int:ticket_id>/', views.seguimiento_ticket, name='seguimiento_ticket'),
     path('cambiar_contrasena/<int:user_id>/', views.cambiar_contrasena, name='cambiar_contrasena'),
-
+    
      # Nuevas URLs para restablecimiento de contraseña
     path('restablecer-contrasena/', views.solicitar_restablecer_contrasena, name='solicitar_restablecer_contrasena'),
     path('restablecer-contrasena/<str:token>/', views.restablecer_contrasena, name='restablecer_contrasena'),

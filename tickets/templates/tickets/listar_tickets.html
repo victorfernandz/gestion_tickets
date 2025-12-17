@@ -2,12 +2,14 @@
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mis Tickets</title>
     <link rel="stylesheet" href="{% static 'tickets/css/style.css' %}">
 </head>
+
 <body>
     <!-- Barra superior fija -->
     <header class="navbar">
@@ -21,6 +23,7 @@
 
     <!-- Contenedor principal -->
     <div class="container">
+
         <!-- Menú lateral -->
         <div class="sidebar">
             <nav>
@@ -29,14 +32,15 @@
                     <li><a href="{% url 'listar_tickets' %}">Tickets</a></li>
                     <li><a href="#">Reportes</a></li>
                     <li><a href="{% url 'administrar_tickets' %}">Administración</a></li>
-                    <li><a href="https://sites.google.com/altamiragroup.com.py/academia-altamira/p%C3%A1gina-principal" target="_blank">Academia AltamiraGroup</a></li>
+                    <li><a href="https://sites.google.com/altamiragroup.com.py/academia-altamira/p%C3%A1gina-principal"
+                            target="_blank">Academia AltamiraGroup</a></li>
                 </ul>
             </nav>
             <!-- Botón de cerrar sesión -->
             <div class="logout-container">
                 <a href="{% url 'logout' %}" class="logout-button">Cerrar Sesión</a>
             </div>
-        </div>        
+        </div>
 
         <!-- Contenido dinámico -->
         <main class="content">
@@ -56,17 +60,17 @@
                     </thead>
                     <tbody>
                         {% for ticket in tickets %}
-                            <tr>
-                                <td><a href="{% url 'seguimiento_ticket' ticket.id %}">{{ ticket.id }}</a></td>
-                                <td>{{ ticket.tipoCaso.descripcion }}</td>
-                                <td>{{ ticket.descripcion }}</td>
-                                <td>{{ ticket.get_estado_display }}</td>
-                                <td>{{ ticket.fecha_creacion }}</td>
-                            </tr>
+                        <tr>
+                            <td><a href="{% url 'seguimiento_ticket' ticket.id %}">{{ ticket.id }}</a></td>
+                            <td>{{ ticket.tipoCaso.descripcion }}</td>
+                            <td>{{ ticket.descripcion }}</td>
+                            <td>{{ ticket.get_estado_display }}</td>
+                            <td>{{ ticket.fecha_creacion }}</td>
+                        </tr>
                         {% empty %}
-                            <tr>
-                                <td colspan="5">No tienes tickets creados.</td>
-                            </tr>
+                        <tr>
+                            <td colspan="5">No tienes tickets creados.</td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -76,7 +80,24 @@
                     <a href="{% url 'crear_ticket' %}">Crear Ticket</a>
                 </div>
             </div>
+            <!--Paginador-->
+
+            <div class="pagination">
+                {% if tickets.has_previous %}
+                <a href="?pagina=1">&laquo; Primera</a>
+                <a href="?pagina={{ tickets.previous_page_number }}">Anterior</a>
+                {% endif %}
+
+                <span>Página {{ tickets.number }} de {{ tickets.paginator.num_pages }}</span>
+
+                {% if tickets.has_next %}
+                <a href="?pagina={{ tickets.next_page_number }}">Siguiente</a>
+                <a href="?pagina={{ tickets.paginator.num_pages }}">Última &raquo;</a>
+                {% endif %}
+            </div>
+
         </main>
     </div>
 </body>
+
 </html>

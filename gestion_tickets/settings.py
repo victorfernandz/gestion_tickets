@@ -64,12 +64,20 @@ WSGI_APPLICATION = 'gestion_tickets.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.sqlite3',
+#        'NAME': BASE_DIR / 'db.sqlite3',
+#    }
+#}
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'gestion_tickets',
-        'USER': 'gestion_user',
-        'PASSWORD': 'V1nsoc4!',
+        'USER': 'postgres',
+        'PASSWORD': 'gestion123',
         'HOST': 'localhost',  
         'PORT': '5432',
     }

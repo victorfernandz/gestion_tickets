@@ -9,6 +9,10 @@ from django.contrib.auth.hashers import make_password, check_password
 from .tasks import (enviar_correo_admin, enviar_correo_usuario)
 from django.core.paginator import Paginator
 from django.urls import reverse
+from django.utils.dateparse import parse_date
+from datetime import datetime
+from django.utils import timezone   
+
 
 # Vista de Login
 def login(request):
@@ -89,15 +93,13 @@ def crear_ticket(request):
     if not user_id:
         return redirect('login') 
 
-    usuario = Usuario.objects.get(id=user_id)
+    usuario_logueado = Usuario.objects.get(id=user_id)
 
     # Si es una petición AJAX para filtrar casos por categoría
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         categoria_id = request.GET.get('categoria_id')
         if categoria_id:
             if categoria_id == '4':
-                # Si la categoría seleccionada es la 4 (Urgente)
-                # Mostrar sólo los casos con categoria_id=4
                 casos = Casos.objects.filter(categoria=4)
             elif categoria_id == '3':
                 casos = Casos.objects.filter(categoria=3)
@@ -105,8 +107,7 @@ def crear_ticket(request):
                 casos = Casos.objects.filter(categoria=2)
             elif categoria_id == '1':
                 casos = Casos.objects.filter(categoria=1)
-            else :
-                # mostrar casos que tengan categoria null
+            else:
                 casos = Casos.objects.exclude(categoria=4)
             
             data = {
@@ -114,44 +115,46 @@ def crear_ticket(request):
             }
             return JsonResponse(data)
         else:
-            # Si no se proporcionó categoria_id, retornar un listado vacío
             return JsonResponse({'casos': []})
 
     if request.method == 'POST':
+
         tipo_caso_id = request.POST.get('tipoCaso')
         descripcion = request.POST.get('descripcion')
         prioridad = request.POST.get('prioridad')
         categoria_id = request.POST.get('categoria')
-#        archivo = request.FILES.get("archivo")
+        usuario_destino_id = request.POST.get('usuario_destino') 
 
         if not tipo_caso_id or not descripcion or not categoria_id:
             messages.error(request, 'Todos los campos son obligatorios.')
         else:
             tipo_caso = Casos.objects.get(id=tipo_caso_id)
             categoria = Categoria.objects.get(id=categoria_id)
+
+            # 👇 ¿Para quién es el ticket?
+            if usuario_destino_id:
+                usuario_afectado = Usuario.objects.get(id=usuario_destino_id)
+            else:
+                usuario_afectado = usuario_logueado
             ticket = Ticket.objects.create(
                 categoria=categoria,
-                usuario=usuario,
+                usuario=usuario_afectado,     
+                creador=usuario_logueado,   
                 tipoCaso=tipo_caso,
                 descripcion=descripcion,
                 estado=1,
                 prioridad=prioridad,
             )
 
-            # Guardar archivo si se adjuntó
-            #if archivo:
-            #    ArchivoAdjunto.objects.create(ticket=ticket, archivo=archivo)
-
             # Generar los mensajes para los correos
             mensaje_admin = render_to_string('tickets/email_template.html', {
                 'ticket_id': ticket.id,
-                'usuario': usuario, 
+                'usuario': usuario_afectado, 
                 'tipoCaso': tipo_caso.descripcion,
                 'descripcion': descripcion,
                 'prioridad': ticket.get_prioridad_display(),
             })
 
-            # Delegar el envío de correos a Celery
             enviar_correo_admin.delay(
                 ticket.id, 
                 'soporte@altamiragroup.com.py',
@@ -166,19 +169,26 @@ def crear_ticket(request):
                 'prioridad': ticket.get_prioridad_display(),
             })            
 
+            # 👇 correo al usuario afectado (no siempre el que crea)
             enviar_correo_usuario.delay(
                 ticket.id, 
-                usuario.email, 
+                usuario_afectado.email, 
                 mensaje_usuario,
                 'No responda este correo - Se ha creado un nuevo ticket'
             )
 
             return redirect('listar_tickets')
 
-     # Si es un GET normal, mostrar el formulario sin AJAX
+    # GET normal: mostrar formulario
     tipo_categoria = Categoria.objects.all()
-    return render(request, 'tickets/crear_ticket.html', {'tipo_categoria': tipo_categoria})
-        
+    usuarios = Usuario.objects.all().order_by('apellido', 'nombre')
+
+    return render(request, 'tickets/crear_ticket.html', {
+        'tipo_categoria': tipo_categoria,
+        'usuarios': usuarios,
+        'usuario_logueado': usuario_logueado,
+    })
+  
 # Vista para listar tickets
 def listar_tickets(request):
     user_id = request.session.get('user_id')
@@ -186,12 +196,21 @@ def listar_tickets(request):
         return redirect('login') 
 
     usuario = Usuario.objects.get(id=user_id)
+
     # Verificamos el rol para filtrar los tickets
     if usuario.rol.descripcion != 'ADMIN':
-        tickets = Ticket.objects.filter(usuario_id=user_id)
+        tickets_list = Ticket.objects.filter(usuario_id=user_id).order_by('-fecha_creacion')
     else:
-        tickets = Ticket.objects.all().order_by('id')
-    return render(request, 'tickets/listar_tickets.html', {'tickets': tickets})
+        tickets_list = Ticket.objects.all().order_by('id')
+
+    #paginador
+    paginador = Paginator(tickets_list, 10)  # 10 tickets por página 
+    nro_pagina = request.GET.get('pagina')
+    tickets = paginador.get_page(nro_pagina)
+
+    return render(request, 'tickets/listar_tickets.html', {
+        'tickets': tickets
+    })
 
 # Vista para la administración de tickets
 def administrar_tickets(request):
@@ -199,7 +218,7 @@ def administrar_tickets(request):
     if not user_id:
         return redirect('login')
 
-    # Valida si el usuario es administrador
+    # Valida si el usuario es administrador   
     usuario = get_object_or_404(Usuario, id=user_id)
     if usuario.rol.descripcion != 'ADMIN':
         return redirect('home')
@@ -211,20 +230,42 @@ def administrar_tickets(request):
     categorias = Categoria.objects.all()
 
     portal_url = "http://192.168.0.25"
+    
 
     # Filtros
     filtro_estado = request.GET.get('estado', '')
     filtro_prioridad = request.GET.get('prioridad', '')
-    filtro_fecha = request.GET.get('fecha', '')
+    #filtro_fecha = request.GET.get('fecha', '')
     filtro_admin = request.GET.get('admin_asignado', '')
     filtro_categoria = request.GET.get('categoria', '')
+
+    filtro_fecha_desde = request.GET.get('fecha_desde')
+    filtro_fecha_hasta = request.GET.get('fecha_hasta')
+    
 
     if filtro_estado:
         tickets_list = tickets_list.filter(estado=filtro_estado)
     if filtro_prioridad:
         tickets_list = tickets_list.filter(prioridad=filtro_prioridad)
-    if filtro_fecha:
-        tickets_list = tickets_list.filter(fecha_creacion__date=filtro_fecha)
+    #filtro antiguo        
+   # if filtro_fecha:
+       # tickets_list = tickets_list.filter(fecha_creacion__date=filtro_fecha)
+    from datetime import datetime
+
+# Validación de rango de fechas
+    if filtro_fecha_desde and filtro_fecha_hasta:
+        try:
+            fecha_desde_dt = datetime.strptime(filtro_fecha_desde, "%Y-%m-%d").date()
+            fecha_hasta_dt = datetime.strptime(filtro_fecha_hasta, "%Y-%m-%d").date()
+
+            if fecha_hasta_dt < fecha_desde_dt:
+                messages.error(request, "La fecha HASTA no puede ser menor que la fecha DESDE.")
+            else:
+                tickets_list = tickets_list.filter(fecha_creacion__date__range=[fecha_desde_dt, fecha_hasta_dt])
+
+        except ValueError:
+            messages.error(request, "Formato de fecha inválido.")
+
     if filtro_admin:
         tickets_list = tickets_list.filter(admin_asignado_id=filtro_admin)
     if filtro_categoria:
@@ -242,7 +283,9 @@ def administrar_tickets(request):
         nueva_prioridad = request.POST.get('nueva_prioridad', '')
         nuevo_admin_id = request.POST.get('nuevo_admin', '')
         nuevo_horario_asignacion = request.POST.get('horario_asignacion', '')
-        nuevo_tiempo_resolucion = request.POST.get('tiempo_resolucion', '')
+        #nuevo_tiempo_resolucion = request.POST.get('tiempo_resolucion', '')
+        nuevo_tiempo_resolucion = request.POST.get('fecha_hora_resolucion', '')
+        
 
         ticket = get_object_or_404(Ticket, id=ticket_id)
 
@@ -261,7 +304,7 @@ def administrar_tickets(request):
         if nuevo_tiempo_resolucion:
             try:
                 horas, minutos = map(int, nuevo_tiempo_resolucion.split(':'))
-                ticket.tiempo_resolucion = timedelta(hours=horas, minutes=minutos)
+                ticket.fecha_hora_resolucion = timedelta(hours=horas, minutes=minutos)
             except ValueError:
                 messages.error(request, 'Formato inválido para tiempo de resolución. Use HH:MM.')
                 return redirect('administrar_tickets')
@@ -351,20 +394,97 @@ def seguimiento_ticket(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
     usuario = Usuario.objects.get(id=user_id)
 
+    # ¿Es admin?
+    es_admin = usuario.rol and usuario.rol.descripcion == 'ADMIN'
+
     # Verifica si es el propietario o Admin
-    if usuario != ticket.usuario and (not usuario.rol or usuario.rol.descripcion != 'ADMIN'):
+    if usuario != ticket.usuario and not es_admin:
         messages.error(request, 'No tienes permiso para ver este ticket.')
         return redirect('home')
 
     if request.method == 'POST':
+
+        # 👉 FORM DEL SIDEBAR (estado, prioridad, agente, tipo, categoría, fecha)
+        if 'fecha_hora_resolucion' in request.POST:
+
+            # 🚫 SOLO ADMIN PUEDE EDITAR ESTO
+            if not es_admin:
+                messages.error(request, 'No tienes permiso para editar la información del ticket.')
+                return redirect('seguimiento_ticket', ticket_id=ticket.id)
+
+            nuevo_estado = request.POST.get('nuevo_estado')
+            fecha_hora_res_str = request.POST.get('fecha_hora_resolucion')
+            nuevo_admin_id = request.POST.get('nuevo_admin')
+            nueva_categoria_id = request.POST.get('nueva_categoria')
+            nuevo_tipo_caso_id = request.POST.get('nuevo_tipo_caso')
+            horario_asignacion_str = request.POST.get('tiempo_fecha_asignacion')
+
+
+            
+            # Guarda tiempo y hora de asignación
+            if horario_asignacion_str:
+                try:
+                    tr = datetime.fromisoformat(horario_asignacion_str)
+                    tr_aware = timezone.make_aware(tr)
+                    ticket.tiempo_fecha_asignacion = tr_aware
+                    # Guardar solo HH:MM como duración
+                    ticket.horario_asignacion = timedelta(hours=tr.hour, minutes=tr.minute)
+                   # horas, minutos = map(int, horario_asignacion_str.split(':'))
+                   # ticket.horario_asignacion = timedelta(hours=horas, minutes=minutos)
+                except ValueError:
+                    messages.error(request, "Formato inválido en horario de asignación.")
+                    return redirect('seguimiento_ticket', ticket_id=ticket.id)
+            else:
+                ticket.tiempo_fecha_asignacion = None
+                ticket.horario_asignacion = None
+                    
+
+            # Actualizar estado
+            if nuevo_estado:
+                ticket.estado = int(nuevo_estado)
+
+            # Actualizar administrador asignado    
+            if nuevo_admin_id:
+                ticket.admin_asignado = Usuario.objects.get(id=nuevo_admin_id)
+            else:
+                ticket.admin_asignado = None
+
+            # Actualizar tipo de caso
+            if nuevo_tipo_caso_id:
+                ticket.tipoCaso = Casos.objects.get(id=nuevo_tipo_caso_id)
+
+            # Actualizar categoría
+            if nueva_categoria_id:
+                ticket.categoria = Categoria.objects.get(id=nueva_categoria_id)
+
+            # Guardar fecha y hora de resolución
+            if fecha_hora_res_str:
+                try:
+                    dt = datetime.fromisoformat(fecha_hora_res_str)
+                    dt_aware = timezone.make_aware(dt)
+                    ticket.fecha_hora_resolucion = dt_aware
+                    # Guardar solo HH:MM como duración
+                    ticket.tiempo_resolucion = timedelta(hours=dt.hour, minutes=dt.minute)
+                except ValueError:
+                    messages.error(request, "Formato inválido en fecha y hora.")
+                    return redirect('seguimiento_ticket', ticket_id=ticket.id)
+            else:
+                ticket.fecha_hora_resolucion = None
+                ticket.tiempo_resolucion = None
+
+            ticket.save()
+            messages.success(request, "Información del ticket actualizada correctamente.")
+            return redirect('seguimiento_ticket', ticket_id=ticket.id)
+
+        # =============================================
+        # 👉 ESTE ES EL FORM DE COMENTARIOS Y ARCHIVOS
+        # =============================================
         comentario_texto = request.POST.get('comentario')
         archivo = request.FILES.get('archivo')
 
-        # Generar URL del ticket 
         portal_url = "http://192.168.0.25"
         ticket_url = f"{portal_url}{reverse('seguimiento_ticket', args=[ticket.id])}"
 
-        # Extraer datos serializables del usuario
         usuario_data = {
             'id': usuario.id,
             'nombre': usuario.nombre,
@@ -372,14 +492,12 @@ def seguimiento_ticket(request, ticket_id):
             'email': usuario.email
         }
 
-        # Obtener el correo del administrador asignado al ticket
         admin_email = ticket.admin_asignado.email if ticket.admin_asignado else "soporte@altamiragroup.com.py"
 
-        # Manejo de comentarios
+        # Guardar comentario
         if comentario_texto:
             comentario = Comentario.objects.create(ticket=ticket, usuario=usuario, texto=comentario_texto)
 
-            # Enviar correos
             mensaje_admin = render_to_string('tickets/email_template_admin_comentario.html', {
                 'ticket_id': ticket.id,
                 'usuario': usuario_data,
@@ -390,7 +508,7 @@ def seguimiento_ticket(request, ticket_id):
             })
 
             enviar_correo_admin.delay(ticket.id, admin_email, mensaje_admin, 'Se ha actualizado su ticket')
-            
+
             mensaje_usuario = render_to_string('tickets/email_template_user_comentario.html', {
                 'ticket_id': ticket.id,
                 'usuario': usuario_data,
@@ -399,14 +517,13 @@ def seguimiento_ticket(request, ticket_id):
                 'prioridad': ticket.get_prioridad_display(),
                 'ticket_url': ticket_url,
             })
-            
+
             enviar_correo_usuario.delay(ticket.id, ticket.usuario.email, mensaje_usuario, 'No responda este correo - Se ha actualizado su ticket')
 
-        # Manejo de subida de archivos
+        # Guardar archivo adjunto
         if archivo:
             archivo_adjunto = ArchivoAdjunto.objects.create(ticket=ticket, archivo=archivo)
 
-            # Enviar correos para el archivo adjunto
             mensaje_archivo = render_to_string('tickets/email_template_admin_comentario.html', {
                 'ticket_id': ticket.id,
                 'usuario': usuario_data,
@@ -423,14 +540,23 @@ def seguimiento_ticket(request, ticket_id):
 
         return redirect('seguimiento_ticket', ticket_id=ticket.id)
 
+    # GET: datos para mostrar
     comentarios = ticket.comentarios.all().order_by('fecha_creacion')
-    archivos = ticket.archivos.all()  # Obtener archivos adjuntos
+    archivos = ticket.archivos.all()
+    administradores = Usuario.objects.filter(rol__descripcion='ADMIN')
+    categorias = Categoria.objects.all()
+    tipos_caso = Casos.objects.all()
 
     return render(request, 'tickets/seguimiento_ticket.html', {
         'ticket': ticket,
         'comentarios': comentarios,
         'archivos': archivos,
+        'categorias': categorias,
+        'tipos_caso': tipos_caso,
+        'administradores': administradores,
+        'es_admin': es_admin,   # para mostrar/ocultar secciones
     })
+
 
 # Restablecer contraseña
 from django.utils.crypto import get_random_string
@@ -512,3 +638,7 @@ def restablecer_contrasena(request, token):
     except TokenRestablecimiento.DoesNotExist:
         messages.error(request, 'El enlace para restablecer la contraseña no es válido.')
         return redirect('login')
+
+
+#def actualizar_ticket(request, ticket_id):
+    

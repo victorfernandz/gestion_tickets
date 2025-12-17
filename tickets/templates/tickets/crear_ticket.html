@@ -18,7 +18,7 @@
         <div class="navbar-title">
             <h1>Gestión de Tickets</h1>
         </div>
-    </header>
+    </header>   
 
     <!-- Contenedor principal -->
     <div class="container">
@@ -47,6 +47,23 @@
                 <!-- Formulario para crear un ticket con archivos adjuntos -->
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
+                    <!--Usuario Creador m-->
+                <div class="form-group">
+                    <label for="categoria">Usuario Afectado</label>
+                    <select name="usuario_destino">
+                        <option value="" selected>
+                            {{ usuario_logueado.nombre }} {{ usuario_logueado.apellido }}
+                        </option>
+                        {% for u in usuarios %}
+                            {% if u.id != usuario_logueado.id %}
+                                <option value="{{ u.id }}">
+                                    {{ u.nombre }} {{ u.apellido }} ({{ u.usuario }})
+                                </option>
+                            {% endif %}
+                        {% endfor %}
+
+                    </select>
+                </div>
 
                     <!-- Categoría -->
                     <div class="form-group">
@@ -85,7 +102,7 @@
                             <option value="3">Alto</option>
                             <option value="4">Muy Alto</option>
                         </select>
-                    </div>
+                    </div> 
 
                     <!-- Estado (Siempre abierto en la creación) -->
                     <div class="form-group-estado">
