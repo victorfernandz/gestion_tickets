@@ -45,6 +45,7 @@
             <h1>Seguimiento del Ticket {{ ticket.id }}</h1>
             <p><strong>Estado:</strong> {{ ticket.get_estado_display }}</p>
             <p><strong>Prioridad:</strong> {{ ticket.get_prioridad_display }}</p>
+            <p><strong>Fecha y hora de creación:</strong> {{ ticket.fecha_creacion|date:"d/m/Y H:i" }}</p>
             <p><strong>Categoría:</strong> {{ ticket.categoria.descripcion }}</p>
             <p><strong>Tipo de caso:</strong> {{ ticket.tipoCaso.descripcion }}</p>
             <p>
@@ -87,7 +88,7 @@
                 <ul>
                     {% for archivo in archivos %}
                         <li>
-                            📂 <a href="{{ archivo.archivo.url }}" target="_blank" download>{{ archivo.archivo.name }}</a>
+                            <a href="{{ archivo.archivo.url }}" target="_blank" download>{{ archivo.archivo.name }}</a>
                         </li>
                     {% endfor %}
                 </ul>

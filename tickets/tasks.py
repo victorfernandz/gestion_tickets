@@ -30,7 +30,7 @@ def enviar_correo_admin(self, ticket_id, admin_email, mensaje_admin, subject):
         return f"Error al enviar correo al administrador: {str(e)}"
 # -------------------------------------------------------------------------
 
-@shared_task(bind=True, max_retries=5)
+@shared_task(bind=True, max_retries=0)
 def enviar_correo_usuario(self, ticket_id, user_email, mensaje_usuario, subject):
     try:
         from_email = user_email if user_email != settings.DEFAULT_FROM_EMAIL else "noreply@altamiragroup.com.py"
@@ -54,7 +54,7 @@ def enviar_correo_usuario(self, ticket_id, user_email, mensaje_usuario, subject)
 
 # -------------------------------------------------------------------------
 
-@shared_task(bind=True, max_retries=3)
+@shared_task(bind=True, max_retries=0)
 def enviar_comentario_ticket(self, subject, message, destinatarios):
     try:
         from_email = settings.DEFAULT_FROM_EMAIL
