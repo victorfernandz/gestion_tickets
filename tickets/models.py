@@ -71,6 +71,7 @@ class Ticket(models.Model):
 
     id = models.AutoField(primary_key=True)
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    creador = models.ForeignKey(Usuario,on_delete=models.CASCADE,related_name="tickets_creados",null=True,blank=True)
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, blank=False, null=False, default=1)
     tipoCaso = models.ForeignKey(Casos, on_delete=models.CASCADE, blank=False, null=False)
     descripcion = models.TextField(max_length=500)
@@ -81,7 +82,13 @@ class Ticket(models.Model):
     admin_asignado = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, blank=True, related_name="tickets_asignados")
     resolucion = models.TextField(blank=True, null=True)  
     horario_asignacion = models.DurationField(null=True, blank=True)  
+    
     tiempo_resolucion = models.DurationField(null=True, blank=True)
+    #Fecha de resolución added by szaracho
+    fecha_resolucion = models.DateField(null=True, blank=True)
+    fecha_hora_resolucion = models.DateTimeField(null=True, blank=True)
+    tiempo_fecha_asignacion = models.DateTimeField(null=True, blank=True)
+    
     archivo = models.FileField(upload_to=ticket_upload_path, null=True, blank=True)
     
     def __str__(self):
