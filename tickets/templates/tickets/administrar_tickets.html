@@ -2,12 +2,14 @@
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administrar Tickets</title>
     <link rel="stylesheet" href="{% static 'tickets/css/style.css' %}">
 </head>
+
 <body>
     <!-- Barra superior -->
     <header class="navbar">
@@ -19,7 +21,7 @@
         </div>
     </header>
 
-    <!-- Contenido principal --> 
+    <!-- Contenido principal -->
     <div class="container">
         <!-- Sidebar -->
         <div class="sidebar">
@@ -31,7 +33,13 @@
                     <li><a href="{% url 'administrar_tickets' %}">Administración</a></li>
                 </ul>
             </nav>
-            <div class="logout-container">
+            <div class="logout-container" style="
+                        position: absolute;
+                        bottom: 30px;
+                        left: 50%;
+                        width: 250px; 
+                        transform: translateX(-50%);
+                        ">
                 <a href="{% url 'logout' %}" class="logout-button">Cerrar Sesión</a>
             </div>
         </div>
@@ -56,9 +64,47 @@
                     <select name="categoria" id="categoria">
                         <option value="">Todas</option>
                         {% for categoria in categorias %}
-                            <option value="{{ categoria.id }}">{{ categoria.descripcion }}</option>
+                        <option value="{{ categoria.id }}">{{ categoria.descripcion }}</option>
                         {% endfor %}
-                    </select>                    
+                    </select>
+
+                   <!-- <label for="departamento">Departamento:</label>
+                    <select name="departamento" id="departamento">
+                            <option value="">Todos</option>
+                            {% for departamento in departamentos %}
+                                <option value="{{ departamento.id }}">{{ departamento.descripcion}}</option>
+                            {% endfor %}
+                   </select>
+
+                   <label for="usuario">Usuario:</label>
+                    <select name="usuario" id="usuario">
+                        <option value="">Todos</option>
+                        {% for u in usuarios %}
+                            <option value="{{ u.id }}">
+                                {{ u.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>-->
+                    
+                   <label for="departamento">Departamento:</label>
+                    <select name="departamento" id="departamento">
+                        <option value="">Todos</option>
+                        {% for d in departamentos %}
+                            <option value="{{ d.id }}" {% if request.GET.departamento == d.id|stringformat:"s" %}selected{% endif %}>
+                                {{ d.descripcion }}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="usuario">Usuario:</label>
+                    <select name="usuario" id="usuario">
+                        <option value="">Todos</option>
+                        {% for u in usuarios %}
+                            <option value="{{ u.id }}" {% if request.GET.usuario == u.id|stringformat:"s" %}selected{% endif %}>
+                                {{ u.nombre }} {{ u.apellido }}
+                            </option>
+                        {% endfor %}
+                    </select>
 
                     <label for="prioridad">Prioridad:</label>
                     <select name="prioridad" id="prioridad">
@@ -75,12 +121,16 @@
                     <select name="admin_asignado" id="admin_asignado">
                         <option value="">Todos</option>
                         {% for admin in administradores %}
-                            <option value="{{ admin.id }}">{{ admin.nombre }} {{ admin.apellido }}</option>
+                        <option value="{{ admin.id }}">{{ admin.nombre }} {{ admin.apellido }}</option>
                         {% endfor %}
                     </select>
 
-                    <label for="fecha">Fecha:</label>
-                    <input type="date" name="fecha" id="fecha">                    
+                    <label for="fecha_desde">Fecha desde:</label>
+                    <input type="date" name="fecha_desde" id="fecha_desde" value="{{ request.GET.fecha_desde }}">
+
+                    <label for="fecha_hasta">Fecha hasta:</label>
+                    <input type="date" name="fecha_hasta" id="fecha_hasta" value="{{ request.GET.fecha_hasta }}">
+
                     <button type="submit">Filtrar</button>
                 </form>
 
@@ -97,110 +147,160 @@
                             <th>Usuario asignado</th>
                             <th>Hora asignación</th>
                             <th>Tiempo Resolución</th>
-                            <th>Acciones</th>
-                <!--            <th>Cambiar Contraseña</th> -->
+                            
+                            <!-- <th>Acciones</th>-->
+                            <!--<th>Cambiar Contraseña</th> -->
                         </tr>
-                    </thead> 
+                    </thead>
                     <br>
                     <tbody>
                         {% for ticket in tickets %}
-                            <tr>
-                                <td><a href="{% url 'seguimiento_ticket' ticket.id %}" target="_blank">{{ ticket.id }}</a></td>
-                                <td>{{ ticket.usuario.nombre }}</td>
-                                <td>{{ ticket.get_estado_display }}</td>
-                                <td>{{ ticket.categoria.descripcion }}</td>
-                                <td>{{ ticket.get_prioridad_display }}</td>
-                                <td>{{ ticket.fecha_creacion }}</td>
-                                <td>
-                                    <p>{{ ticket.admin_asignado.nombre|default:"No asignado" }}</p>
-                                </td>
-                                <td>
-                                    {% if ticket.horario_asignacion %}
-                                        {{ ticket.horario_asignacion }}
-                                    {% else %}
-                                        No definido
-                                    {% endif %}
-                                </td>
+                        <tr>
+                            <td><a href="{% url 'seguimiento_ticket' ticket.id %}" target="_blank">{{ ticket.id }}</a>
+                            </td>
+                            <td>{{ ticket.usuario.nombre }}</td>
+                            <td>{{ ticket.get_estado_display }}</td>
+                            <td>{{ ticket.categoria.descripcion }}</td>
+                            <td>{{ ticket.get_prioridad_display }}</td>
+                            <td>{{ ticket.fecha_creacion }}</td>
+                            
 
-                                <td>
-                                    {% if ticket.tiempo_resolucion %}
-                                        {{ ticket.tiempo_resolucion }}
-                                    {% else %}
-                                        No definido
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <form method="post">
+                            <td>
+                                <p>{{ ticket.admin_asignado.nombre|default:"No asignado" }}</p>
+                            </td>
+                            <td>
+                                {% if ticket.horario_asignacion %}
+                                {{ ticket.horario_asignacion }}
+                                {% else %}
+                                No definido
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% if ticket.tiempo_resolucion %}
+                                {{ ticket.tiempo_resolucion }}
+                                {% else %}
+                                No definido
+                                {% endif %}
+                            </td>
+
+                            <!--<form method="post">
                                         {% csrf_token %}
-                                        <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+                                        <input type="hidden" name="ticket_id" value="{{ ticket.id }}">-->
 
-                                        <!-- Cambiar estado -->
-                                        <select name="nuevo_estado">
+                            <!-- Cambiar estado -->
+                            <!--<select name="nuevo_estado">
                                             <option value="1" {% if ticket.estado == 1 %}selected{% endif %}>Abierto</option>
                                             <option value="2" {% if ticket.estado == 2 %}selected{% endif %}>En Proceso</option>
                                             <option value="3" {% if ticket.estado == 3 %}selected{% endif %}>En espera de feedback</option>
                                             <option value="4" {% if ticket.estado == 4 %}selected{% endif %}>Cerrado</option>
-                                        </select>
+                                        </select>-->
 
-                                        <!-- Cambiar prioridad -->
-                                        <select name="nueva_prioridad">
+                            <!-- Cambiar prioridad -->
+                            <!-- <select name="nueva_prioridad">
                                             <option value="1" {% if ticket.prioridad == 1 %}selected{% endif %}>Bajo</option>
                                             <option value="2" {% if ticket.prioridad == 2 %}selected{% endif %}>Medio</option>
                                             <option value="3" {% if ticket.prioridad == 3 %}selected{% endif %}>Alto</option>
                                             <option value="4" {% if ticket.prioridad == 4 %}selected{% endif %}>Muy Alto</option>
-                                        </select>
+                                        </select>-->
 
-                                        <!-- Asignar administrador -->
-                                        <select name="nuevo_admin">
+                            <!-- Asignar administrador -->
+                            <!-- <select name="nuevo_admin">
                                             <option value="">No asignado</option>
                                             {% for admin in administradores %}
                                                 <option value="{{ admin.id }}" {% if ticket.admin_asignado and ticket.admin_asignado.id == admin.id %}selected{% endif %}>
                                                     {{ admin.nombre }} {{ admin.apellido }}
                                                 </option>
                                             {% endfor %}
-                                        </select>
+                                        </select> -->
 
-                                        <label for="horaAsig_{{ ticket.id }}">Hora Asig.:</label>
+                            <!-- <label for="horaAsig_{{ ticket.id }}">Hora Asig.:</label>
                                         <input type="time" name="horario_asignacion" id="horaAsig_{{ ticket.id }}">
 
                                         <label for="fechaResolucion_{{ ticket.id }}">Tiempo Res.:</label>
                                         <input type="time" name="tiempo_resolucion" id="fechaResolucion_{{ ticket.id }}">
 
                                         <button type="submit">Actualizar</button>
-                                    </form>
-                                </td>
-                                <!-- Botón para cambiar contraseña 
+                                    </form>-->
+
+                            <!-- Botón para cambiar contraseña 
                                 <td>                                    
                                     <form method="get" action="{% url 'cambiar_contrasena' ticket.usuario.id %}">
                                         <button type="submit">Cambiar Contraseña</button>
                                     </form>                                    
                                 </td>-->
-                            </tr>
+                        </tr>
                         {% empty %}
-                            <tr>
-                                <td colspan="8">No hay tickets disponibles.</td>
-                            </tr>
+                        <tr>
+                            <td colspan="8">No hay tickets disponibles.</td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
             <br><br>
             <!-- Paginador -->
-            <div class="pagination">
+             <div class="pagination">
+                    {% if tickets.has_previous %}
+                        <a href="?{{ querystring }}&pagina=1">&laquo; Primera</a>
+                        <a href="?{{ querystring }}&pagina={{ tickets.previous_page_number }}">Anterior</a>
+                    {% endif %}
+
+                    <span>Página {{ tickets.number }} de {{ tickets.paginator.num_pages }}</span>
+
+                    {% if tickets.has_next %}
+                        <a href="?{{ querystring }}&pagina={{ tickets.next_page_number }}">Siguiente</a>
+                        <a href="?{{ querystring }}&pagina={{ tickets.paginator.num_pages }}">Última &raquo;</a>
+                    {% endif %}
+                </div>
+
+
+           <!-- <div class="pagination">
                 {% if tickets.has_previous %}
-                    <a href="?pagina=1">&laquo; Primera</a>
-                    <a href="?pagina={{ tickets.previous_page_number }}">Anterior</a>
+                <a href="?pagina=1">&laquo; Primera</a>
+                <a href="?pagina={{ tickets.previous_page_number }}">Anterior</a>
                 {% endif %}
 
                 <span>Página {{ tickets.number }} de {{ tickets.paginator.num_pages }}</span>
 
                 {% if tickets.has_next %}
-                    <a href="?pagina={{ tickets.next_page_number }}">Siguiente</a>
-                    <a href="?pagina={{ tickets.paginator.num_pages }}">Última &raquo;</a>
+                <a href="?pagina={{ tickets.next_page_number }}">Siguiente</a>
+                <a href="?pagina={{ tickets.paginator.num_pages }}">Última &raquo;</a>
                 {% endif %}
-            </div>
+            </div>-->
+
 
         </main>
     </div>
+    <!--Script para que al momento de tipear la fecha desde se complete fecha hasta-->
+    <!--  <script>
+           document.addEventListener("DOMContentLoaded", function() {
+                const fechaDesdeInput = document.getElementById("fecha_desde");
+                const fechaHastaInput = document.getElementById("fecha_hasta");
+
+                fechaDesdeInput.addEventListener("change", function() {
+                    const valorDesde = this.value;  // YYYY-MM-DD
+
+                    if (!valorDesde) return;
+
+                    // Solo autocompletar si fecha_hasta está vacía
+                    if (!fechaHastaInput.value) {
+                        const fechaDesdeDate = new Date(valorDesde);
+                        fechaDesdeDate.setDate(fechaDesdeDate.getDate() + 7);
+
+                        const year  = fechaDesdeDate.getFullYear();
+                        const month = String(fechaDesdeDate.getMonth() + 1).padStart(2, '0');
+                        const day   = String(fechaDesdeDate.getDate()).padStart(2, '0');
+
+                        fechaHastaInput.value = `${year}-${month}-${day}`;
+                    }
+
+                    // Opcional: no permitir que fecha_hasta sea menor que fecha_desde
+                    fechaHastaInput.min = valorDesde;
+                });
+             });
+     </script>-->
+     
 </body>
+
 </html>
