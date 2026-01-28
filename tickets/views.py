@@ -419,7 +419,7 @@ def seguimiento_ticket(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
     usuario = Usuario.objects.get(id=user_id)
 
-    # ¿Es admin?
+    # Es admin?
     es_admin = usuario.rol and usuario.rol.descripcion == 'ADMIN'
 
     # Verifica si es el propietario o Admin
@@ -429,7 +429,7 @@ def seguimiento_ticket(request, ticket_id):
 
     if request.method == 'POST':
 
-        # 👉 FORM DEL SIDEBAR (estado, prioridad, agente, tipo, categoría, fecha)
+        # FORM DEL SIDEBAR (estado, prioridad, agente, tipo, categoría, fecha)
         if 'fecha_hora_resolucion' in request.POST:
 
             # 🚫 SOLO ADMIN PUEDE EDITAR ESTO
@@ -438,6 +438,7 @@ def seguimiento_ticket(request, ticket_id):
                 return redirect('seguimiento_ticket', ticket_id=ticket.id)
 
             nuevo_estado = request.POST.get('nuevo_estado')
+            nueva_prioridad = request.POST.get('nueva_prioridad') 
             fecha_hora_res_str = request.POST.get('fecha_hora_resolucion')
             nuevo_admin_id = request.POST.get('nuevo_admin')
             nueva_categoria_id = request.POST.get('nueva_categoria')
@@ -467,7 +468,9 @@ def seguimiento_ticket(request, ticket_id):
             # Actualizar estado
             if nuevo_estado:
                 ticket.estado = int(nuevo_estado)
-
+            #Nueva Prioridad
+            if nueva_prioridad:
+                ticket.prioridad = (nueva_prioridad)
             # Actualizar administrador asignado    
             if nuevo_admin_id:
                 ticket.admin_asignado = Usuario.objects.get(id=nuevo_admin_id)
