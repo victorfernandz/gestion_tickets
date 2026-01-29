@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seguimiento del Ticket {{ ticket.id }}</title>
     <link rel="stylesheet" href="{% static 'tickets/css/style.css' %}">
-    <script src="{% static 'tickets/js/script.js' }}" defer></script>
+    <script src="{% static 'tickets/js/script.js' %}" defer></script>
 </head>
 <body>
     <!-- Barra superior -->
@@ -30,7 +30,7 @@
                     <li><a href="{% url 'listar_tickets' %}">Tickets</a></li>
                     <li><a href="#">Reportes</a></li>
                     <li><a href="{% url 'administrar_tickets' %}">Administración</a></li>
-                    <li><a href="https://sites.google.com/altamiragroup.com.py/academia-altamira/p%C3%A1gina-principal" target="_blank">Academia AltamiraGroup</a></li>
+                    <li><a href="https://sites.google.com/altamiragroup.com.py/intranet-ag/p%C3%A1gina-principal?authuser=0" target="_blank">Academia AltamiraGroup</a></li>
                 </ul>
             </nav>
             <div class="logout-container" style="
@@ -98,13 +98,26 @@
                         {% endif %}
                     </div>
 
+                    <div>
+                     <!-- Formulario para subir archivos -->
+                        {% if ticket.estado != 4 %}
+                          <h2>Subir archivo</h2>
+                            <form method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <input type="file" name="archivo" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx" required>
+                                <br><br>
+                                <button type="submit" class="btn-agregar">Subir archivo</button>
+                            </form>   
+                        {% endif %}
+                    </div>
+
                     <!-- Mostrar archivos adjuntos (solo lista) -->
                     <h2>Archivos adjuntos</h2>
                     {% if archivos %}
                         <ul>
                             {% for archivo in archivos %}
                                 <li>
-                                    📂 <a href="{{ archivo.archivo.url }}" target="_blank" download>{{ archivo.archivo.name }}</a>
+                                     <a href="{{ archivo.archivo.url }}" target="_blank" download>{{ archivo.archivo.name }}</a>
                                 </li>
                             {% endfor %}
                         </ul>
@@ -120,7 +133,7 @@
 
                     {% if es_admin %}
 
-                        <!-- 🔐 VERSIÓN EDITABLE (SOLO ADMIN) -->
+                        <!--  VERSIÓN EDITABLE (SOLO ADMIN) -->
                         <form method="POST" action="{% url 'seguimiento_ticket' ticket.id %}">
                             {% csrf_token %}
 
