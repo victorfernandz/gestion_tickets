@@ -96,26 +96,34 @@ header {
 
 /* Logout Button */
 .logout-container {
-    margin-top: auto;
-    padding-top: 20px;
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    width: 250px;
+    transform: translateX(-50%);
+    text-align: center;
 }
 
 .logout-button {
-    color: #fff;
-    background-color: #5a5e64;
-    padding: 10px 15px;
-    text-decoration: none;
-    border-radius: 5px;
-    font-weight: bold;
-    text-align: center;
     display: block;
-    transition: background-color 0.3s ease;
-    border: 1px solid #000;
+    width: 100%;
+    padding: 10px 0;
+    background-color: #5f6368; /* gris oscuro */
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: 1px solid #444;
+    transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
 .logout-button:hover {
-    background-color: #000;
-    color: #fff;
+    background-color: #4b4f53;
+}
+
+.logout-button:active {
+    transform: scale(0.98);
 }
 
 /* Table */
@@ -458,4 +466,68 @@ footer {
 
 .password-reset-link a:hover, .login-link a:hover {
     color: #797676;
+}
+
+/* ===== Seguimiento Ticket: panel derecho ===== */
+.ticket-layout{
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.ticket-main{
+    flex: 1;
+}
+
+.ticket-info{
+    width: 320px;
+    min-height: 650px;
+    background: #f1f1f1;
+    padding: 25px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    margin-left: auto; /*  panel pegado a la derecha */
+}
+
+.ticket-info-title{
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+/* Filas prolijas del form admin */
+.ticket-row{
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ticket-row span{
+  font-weight: bold;
+}
+
+/* Inputs */
+.ticket-info select,
+.ticket-info input{
+  width: 100%;
+  height: 32px;
+  padding: 4px 8px;
+  border: 1px solid #cfcfcf;
+  border-radius: 4px;
+}
+
+/* Botón actualizar */
+.btn-actualizar{
+  display: block;
+  width: 80%;
+  margin: 25px auto 10px auto;
+  padding: 10px 0;
+  background-color: #b7bdb7;
+  color: #333;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
 }

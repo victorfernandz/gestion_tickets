@@ -131,7 +131,7 @@ def crear_ticket(request):
             tipo_caso = Casos.objects.get(id=tipo_caso_id)
             categoria = Categoria.objects.get(id=categoria_id)
 
-            # 👇 ¿Para quién es el ticket?
+            # Para quién es el ticket?
             if usuario_destino_id:
                 usuario_afectado = Usuario.objects.get(id=usuario_destino_id)
             else:
@@ -147,12 +147,13 @@ def crear_ticket(request):
             )
 
             # Generar los mensajes para los correos
+            prioridad_descripcion = ticket.get_prioridad_display()
             mensaje_admin = render_to_string('tickets/email_template.html', {
                 'ticket_id': ticket.id,
                 'usuario': usuario_afectado, 
                 'tipoCaso': tipo_caso.descripcion,
                 'descripcion': descripcion,
-                'prioridad': ticket.get_prioridad_display(),
+                'prioridad': prioridad_descripcion,#ticket.get_prioridad_display(),
             })
 
             enviar_correo_admin.delay(
@@ -166,10 +167,10 @@ def crear_ticket(request):
                 'ticket_id': ticket.id,
                 'tipoCaso': tipo_caso.descripcion,
                 'descripcion': descripcion,
-                'prioridad': ticket.get_prioridad_display(),
+                'prioridad': prioridad_descripcion#ticket.get_prioridad_display(),
             })            
 
-            # 👇 correo al usuario afectado (no siempre el que crea)
+            #correo al usuario afectado (no siempre el que crea)
             enviar_correo_usuario.delay(
                 ticket.id, 
                 usuario_afectado.email, 
