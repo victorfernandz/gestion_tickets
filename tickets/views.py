@@ -433,7 +433,7 @@ def seguimiento_ticket(request, ticket_id):
         # FORM DEL SIDEBAR (estado, prioridad, agente, tipo, categoría, fecha)
         if 'fecha_hora_resolucion' in request.POST:
 
-            # 🚫 SOLO ADMIN PUEDE EDITAR ESTO
+            # SOLO ADMIN PUEDE EDITAR ESTO
             if not es_admin:
                 messages.error(request, 'No tienes permiso para editar la información del ticket.')
                 return redirect('seguimiento_ticket', ticket_id=ticket.id)
@@ -506,7 +506,7 @@ def seguimiento_ticket(request, ticket_id):
             return redirect('seguimiento_ticket', ticket_id=ticket.id)
 
         # =============================================
-        # 👉 ESTE ES EL FORM DE COMENTARIOS Y ARCHIVOS
+        # ESTE ES EL FORM DE COMENTARIOS Y ARCHIVOS
         # =============================================
         comentario_texto = request.POST.get('comentario')
         archivo = request.FILES.get('archivo')
@@ -522,7 +522,23 @@ def seguimiento_ticket(request, ticket_id):
         }
 
         admin_email = ticket.admin_asignado.email if ticket.admin_asignado else "soporte@altamiragroup.com.py"
+         #Update de estado una vez modificado el ticket  szaracho 04/02/2026   
+        if nuevo_estado:
+            mensaje_usuario = render_to_string('tickets/email_actualizacion_estado_user.html', {
+                'ticket': ticket,
+                'horario': horario_asignacion_str,
+                'estado' : nuevo_estado,
+                'prioridad' : nueva_prioridad,
+                'ticket_url' : ticket_url,
+            })
 
+            enviar_correo_usuario.delay(
+                ticket.id,
+                ticket.usuario.email,
+                mensaje_usuario,
+                'No responda este correo - Se ha actualizado su ticket'
+            )    
+        
         # Guardar comentario
         if comentario_texto:
             comentario = Comentario.objects.create(ticket=ticket, usuario=usuario, texto=comentario_texto)
