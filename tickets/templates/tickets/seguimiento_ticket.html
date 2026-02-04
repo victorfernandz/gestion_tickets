@@ -33,13 +33,7 @@
                     <li><a href="https://sites.google.com/altamiragroup.com.py/intranet-ag/p%C3%A1gina-principal?authuser=0" target="_blank">Academia AltamiraGroup</a></li>
                 </ul>
             </nav>
-            <div class="logout-container" style="
-                        position: absolute;
-                        bottom: 30px;
-                        left: 50%;
-                        width: 250px; 
-                        transform: translateX(-50%);
-                        ">
+            <div class="logout-container">
                 <a href="{% url 'logout' %}" class="logout-button">Cerrar Sesión</a>
             </div>
         </div>
@@ -49,20 +43,11 @@
     <main class="content">
         <div class="form-container">
             <h1>Seguimiento del Ticket {{ ticket.id }}</h1>
-
-            <div style="display: flex;">
-                <!-- Columna izquierda: detalle, comentarios y lista de archivos -->
-                <div class="form-container" style="flex: 1;">
-                    <p>
-                        <!--<strong>Prioridad:</strong> {{ ticket.get_prioridad_display }} &nbsp;&nbsp;-->
-                        <!--<strong>Estado:</strong> {{ ticket.get_estado_display }} &nbsp;&nbsp;-->
-                        <strong>Fecha de creación:</strong> {{ ticket.fecha_creacion|date:"d/m/Y" }}
-                    </p>
+            <div class="ticket-layout">
+                <!-- Columna izquierda -->
+                <div class="ticket-main">
+                    <p><strong>Fecha de creación:</strong> {{ ticket.fecha_creacion|date:"d/m/Y" }}</p>
                     <p><strong>Usuario:</strong> {{ ticket.usuario.nombre }} {{ ticket.usuario.apellido }}</p>
-                    <p>
-                        <!--<strong>Categoría:</strong> {{ ticket.categoria.descripcion }} &nbsp;&nbsp;-->
-                        <!--<strong>Tipo de caso:</strong> {{ ticket.tipoCaso.descripcion }}-->
-                    </p>
                     <p>
                         <strong>Usuario de soporte asignado:</strong>
                         {% if ticket.admin_asignado %}
@@ -71,79 +56,77 @@
                             No asignado
                         {% endif %}
                     </p>
+
                     <p><strong>Descripción:</strong> {{ ticket.descripcion }}</p>
 
-                    <!-- Comentarios -->
                     <h2>Comentarios</h2>
                     <ul>
-                        {% for comentario in comentarios %}
-                            <li>
-                                <strong>{{ comentario.usuario.apellido }}, {{ comentario.usuario.nombre }}</strong>: {{ comentario.texto }}
-                            </li>
-                        {% empty %}
-                            <li>No hay comentarios para este ticket.</li>
-                        {% endfor %}
+                     {% for comentario in comentarios %}
+                        <li>
+                          <strong>{{ comentario.usuario.apellido }}, {{ comentario.usuario.nombre }}</strong>:
+                           {{ comentario.texto }}
+                        </li>
+                     {% empty %}
+                        <li>No hay comentarios para este ticket.</li>
+                     {% endfor %}
                     </ul>
 
-                    <!-- Formulario para agregar comentarios -->
                     <div class="form-group">
                         {% if ticket.estado != 4 %}
                             <h2>Agregar comentario</h2>
                             <form method="post" action="{% url 'seguimiento_ticket' ticket.id %}">
-                                {% csrf_token %}
-                                <textarea id="comentario" name="comentario" rows="4" placeholder="Escribe un comentario..." required></textarea>
-                                <br><br>
-                                <button type="submit" class="btn-agregar">Agregar comentario</button>
+                            {% csrf_token %}
+                            <textarea id="comentario" name="comentario" rows="4" placeholder="Escribe un comentario..." required></textarea>
+                            <br><br>
+                            <button type="submit" class="btn-agregar">Agregar comentario</button>
                             </form>
                         {% endif %}
                     </div>
 
-                    <div>
+                    <h2>Archivos adjuntos</h2>
+                      {% if archivos %}
+                    <ul>
+                        {% for archivo in archivos %}
+                            <li>
+                                <a href="{{ archivo.archivo.url }}" target="_blank" download>
+                                {{ archivo.archivo.name }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                      <p>No hay archivos adjuntos.</p>
+                    {% endif %}
+
                      <!-- Formulario para subir archivos -->
+                     
                         {% if ticket.estado != 4 %}
-                          <h2>Subir archivo</h2>
+                            <h2>Subir archivo</h2>
                             <form method="post" enctype="multipart/form-data">
                                 {% csrf_token %}
                                 <input type="file" name="archivo" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx" required>
                                 <br><br>
                                 <button type="submit" class="btn-agregar">Subir archivo</button>
-                            </form>   
-                        {% endif %}
-                    </div>
-
-                    <!-- Mostrar archivos adjuntos (solo lista) -->
-                    <h2>Archivos adjuntos</h2>
-                    {% if archivos %}
-                        <ul>
-                            {% for archivo in archivos %}
-                                <li>
-                                     <a href="{{ archivo.archivo.url }}" target="_blank" download>{{ archivo.archivo.name }}</a>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p>No hay archivos adjuntos.</p>
-                    {% endif %}
+                            </form>
+                        {% endif %}  
                 </div>
+               
+                <!-- Columna derecha -->
+                <aside class="ticket-info">
 
-                <!-- Columna derecha: ÚNICA sidebar -->
-                 <aside style="width: 320px; min-height: 650px; background: #f1f1f1; padding: 25px; border-left: 1px solid #ccc;">
-
-                    <h3 style="margin-top: 0; margin-bottom: 20px;">Información del Ticket</h3>
-
+                    <h3 class="ticket-info-title">Información del Ticket</h3>
                     {% if es_admin %}
-
-                        <!--  VERSIÓN EDITABLE (SOLO ADMIN) -->
                         <form method="POST" action="{% url 'seguimiento_ticket' ticket.id %}">
                             {% csrf_token %}
 
-                            <div style="margin-bottom:12px;">
-                                <strong>ID:</strong> {{ ticket.id }}
+                            <div class="ticket-row">
+                              <span>ID:</span>
+                              <strong>{{ ticket.id }}</strong>
                             </div>
 
-                            <div style="display:flex; align-items:center; margin-bottom:12px;">
-                                <span style="width:130px; font-weight:bold;">Estado:</span>
-                                <select name="nuevo_estado" style="flex:1;">
+                            <div class="ticket-row">
+                                <span>Estado:</span>
+                                <select name="nuevo_estado">
                                     <option value="1" {% if ticket.estado == 1 %}selected{% endif %}>Abierto</option>
                                     <option value="2" {% if ticket.estado == 2 %}selected{% endif %}>En Proceso</option>
                                     <option value="3" {% if ticket.estado == 3 %}selected{% endif %}>En espera</option>
@@ -151,9 +134,9 @@
                                 </select>
                             </div>
 
-                            <div style="display:flex; align-items:center; margin-bottom:12px;">
-                                <span style="width:130px; font-weight:bold;">Prioridad:</span>
-                                <select name="nueva_prioridad" style="flex:1;">
+                            <div class="ticket-row">
+                                <span>Prioridad:</span>
+                                <select name="nueva_prioridad">
                                     <option value="1" {% if ticket.prioridad == 1 %}selected{% endif %}>Bajo</option>
                                     <option value="2" {% if ticket.prioridad == 2 %}selected{% endif %}>Medio</option>
                                     <option value="3" {% if ticket.prioridad == 3 %}selected{% endif %}>Alto</option>
@@ -161,100 +144,82 @@
                                 </select>
                             </div>
 
-                            <div style="display:flex; align-items:center; margin-bottom:12px;">
-                                <span style="width:130px; font-weight:bold;">Agente:</span>
-                                <select name="nuevo_admin" style="flex:1;">
+                            <div class="ticket-row">
+                                <span>Agente:</span>
+                                <select name="nuevo_admin">
                                     <option value="">No asignado</option>
                                     {% for admin in administradores %}
-                                        <option value="{{ admin.id }}" {% if ticket.admin_asignado and ticket.admin_asignado.id == admin.id %}selected{% endif %}>
-                                            {{ admin.nombre }} {{ admin.apellido }}
-                                        </option>
+                                    <option value="{{ admin.id }}"
+                                        {% if ticket.admin_asignado and ticket.admin_asignado.id == admin.id %}selected{% endif %}>
+                                        {{ admin.nombre }} {{ admin.apellido }}
+                                    </option>
                                     {% endfor %}
                                 </select>
                             </div>
 
-                            <div style="display:flex; align-items:center; margin-bottom:12px;">
-                                <span style="width:130px; font-weight:bold;">Tipo de Caso:</span>
-                                <select name="nuevo_tipo_caso" style="flex:1;">
+                            <div class="ticket-row">
+                                <span>Tipo de Caso:</span>
+                                <select name="nuevo_tipo_caso">
                                     {% for tipo in tipos_caso %}
-                                        <option value="{{ tipo.id }}" {% if ticket.tipoCaso.id == tipo.id %}selected{% endif %}>
-                                            {{ tipo.descripcion }}
-                                        </option>
+                                    <option value="{{ tipo.id }}"
+                                        {% if ticket.tipoCaso.id == tipo.id %}selected{% endif %}>
+                                        {{ tipo.descripcion }}
+                                    </option>
                                     {% endfor %}
                                 </select>
                             </div>
 
-                            <div style="display:flex; align-items:center; margin-bottom:12px;">
-                                <span style="width:130px; font-weight:bold;">Categoría:</span>
-                                <select name="nueva_categoria" style="flex:1;">
+                            <div class="ticket-row">
+                                <span>Categoría:</span>
+                                <select name="nueva_categoria">
                                     {% for categoria in categorias %}
-                                        <option value="{{ categoria.id }}" {% if ticket.categoria.id == categoria.id %}selected{% endif %}>
-                                            {{ categoria.descripcion }}
-                                        </option>
+                                    <option value="{{ categoria.id }}"
+                                        {% if ticket.categoria.id == categoria.id %}selected{% endif %}>
+                                        {{ categoria.descripcion }}
+                                    </option>
                                     {% endfor %}
                                 </select>
                             </div>
 
-                            <div style="display:flex; align-items:center; margin-bottom:20px;">
-                                <span style="width:130px; font-weight:bold;">Tiempo de Resolución:</span>
-                                <input type="datetime-local" name="fecha_hora_resolucion" style="flex:1;"
+                            <div class="ticket-row">
+                                <span>Tiempo de Resolución:</span>
+                                <input type="datetime-local" name="fecha_hora_resolucion"
                                     value="{% if ticket.fecha_hora_resolucion %}{{ ticket.fecha_hora_resolucion|date:'Y-m-d\\TH:i' }}{% endif %}">
                             </div>
 
-                            <div style="display:flex; align-items:center; margin-bottom:20px;">
-                                <span style="width:130px; font-weight:bold;">Horario de Asignación:</span>
-                                <input type="datetime-local" name="tiempo_fecha_asignacion" style="flex:1;"
+                            <div class="ticket-row">
+                                <span>Horario de Asignación:</span>
+                                <input type="datetime-local" name="tiempo_fecha_asignacion"
                                     value="{% if ticket.tiempo_fecha_asignacion %}{{ ticket.tiempo_fecha_asignacion|date:'Y-m-d\\TH:i' }}{% endif %}">
                             </div>
 
-
-                            <button type="submit"
-                                style="
-                                    display:block;
-                                    width:80%;
-                                    margin: 25px auto 10px auto;
-                                    padding: 10px 0;
-                                    background-color: #b7bdb7;
-                                    color: #333;
-                                    font-weight: bold;
-                                    border: none;
-                                    border-radius: 5px;
-                                    cursor: pointer;
-                                ">
-                                Actualizar
-                            </button>
-
+                            <button type="submit" class="btn-actualizar">Actualizar</button>
                         </form>
 
                     {% else %}
 
-                        <!-- 👀 VERSIÓN SOLO LECTURA (USUARIO NORMAL) -->
-                        
                         <p><strong>ID:</strong> {{ ticket.id }}</p>
-
                         <p><strong>Estado:</strong> {{ ticket.get_estado_display }}</p>
-
                         <p><strong>Prioridad:</strong> {{ ticket.get_prioridad_display }}</p>
 
                         <p>
                             <strong>Agente:</strong>
                             {% if ticket.admin_asignado %}
-                                {{ ticket.admin_asignado.nombre }} {{ ticket.admin_asignado.apellido }}
+                              {{ ticket.admin_asignado.nombre }} {{ ticket.admin_asignado.apellido }}
                             {% else %}
-                                No asignado
+                              No asignado
                             {% endif %}
                         </p>
 
                         <p><strong>Tipo de Caso:</strong> {{ ticket.tipoCaso.descripcion }}</p>
-
                         <p><strong>Categoría:</strong> {{ ticket.categoria.descripcion }}</p>
 
                         <p>
                             <strong>Resolución:</strong>
                             {% if ticket.fecha_hora_resolucion %}
-                                {{ ticket.fecha_hora_resolucion|date:"d/m/Y H:i" }}
+                              {{ ticket.fecha_hora_resolucion|date:"d/m/Y H:i" }}
                             {% else %}
-                                No definido
+                              No definido
                             {% endif %}
                         </p>
 
@@ -263,16 +228,13 @@
                             {% if ticket.tiempo_fecha_asignacion %}
                                 {{ ticket.tiempo_fecha_asignacion|date:"d/m/Y H:i" }}
                             {% else %}
-                                No definido
+                               No definido
                             {% endif %}
+                        </p>
 
                     {% endif %}
+                </aside>
 
-                    <!--<h3 style="margin-top:25px;">Volver a:</h3>
-                    <a href="{% url 'listar_tickets' %}">Mis Tickets</a>-->
-
-
-                </aside>              
             </div>
         </div>
     </main>
