@@ -182,17 +182,17 @@
                             </div>
 
                             <div class="ticket-row">
-                                <span>Tiempo de Resolución:</span>
-                                <input type="datetime-local" name="fecha_hora_resolucion"
-                                    value="{% if ticket.fecha_hora_resolucion %}{{ ticket.fecha_hora_resolucion|date:'Y-m-d\\TH:i' }}{% endif %}">
-                            </div>
-
-                            <div class="ticket-row">
                                 <span>Horario de Asignación:</span>
                                 <input type="datetime-local" name="tiempo_fecha_asignacion"
                                     value="{% if ticket.tiempo_fecha_asignacion %}{{ ticket.tiempo_fecha_asignacion|date:'Y-m-d\\TH:i' }}{% endif %}">
                             </div>
 
+                            <div class="ticket-row">
+                                <span>Tiempo de Resolución:</span>
+                                <input type="datetime-local" name="fecha_hora_resolucion"
+                                    value="{% if ticket.fecha_hora_resolucion %}{{ ticket.fecha_hora_resolucion|date:'Y-m-d\\TH:i' }}{% endif %}">
+                            </div>
+                            
                             <button type="submit" class="btn-actualizar">Actualizar</button>
                         </form>
 
