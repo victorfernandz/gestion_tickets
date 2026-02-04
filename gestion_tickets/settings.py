@@ -115,9 +115,10 @@ USE_TZ = False
 # Configuración de archivos estáticos y de medios
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Donde collectstatic copiará todos los archivos
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'tickets', 'static'),
-]
+
+#STATICFILES_DIRS = [
+#    os.path.join(BASE_DIR, 'tickets', 'static'),
+#]
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

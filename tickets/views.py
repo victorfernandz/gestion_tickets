@@ -147,13 +147,12 @@ def crear_ticket(request):
             )
 
             # Generar los mensajes para los correos
-            prioridad_descripcion = ticket.get_prioridad_display()
             mensaje_admin = render_to_string('tickets/email_template.html', {
                 'ticket_id': ticket.id,
                 'usuario': usuario_afectado, 
                 'tipoCaso': tipo_caso.descripcion,
                 'descripcion': descripcion,
-                'prioridad': prioridad_descripcion,#ticket.get_prioridad_display(),
+                'prioridad': ticket.get_prioridad_display(),
             })
 
             enviar_correo_admin.delay(
@@ -167,10 +166,10 @@ def crear_ticket(request):
                 'ticket_id': ticket.id,
                 'tipoCaso': tipo_caso.descripcion,
                 'descripcion': descripcion,
-                'prioridad': prioridad_descripcion#ticket.get_prioridad_display(),
+                'prioridad': ticket.get_prioridad_display(),
             })            
 
-            #correo al usuario afectado (no siempre el que crea)
+            # correo al usuario afectado (no siempre el que crea)
             enviar_correo_usuario.delay(
                 ticket.id, 
                 usuario_afectado.email, 
@@ -366,7 +365,7 @@ def administrar_tickets(request):
                 'No responda este correo - Se ha actualizado su ticket'
             )
 
-        # Enviar correos si se asignó un administrador y horario de asignación
+        #Enviar correos si se asignó un administrador y horario de asignación
         if ticket.admin_asignado and nuevo_horario_asignacion:
             mensaje_admin = render_to_string('tickets/email_actualizacion_admin.html', {
                 'ticket': ticket,
@@ -430,13 +429,16 @@ def seguimiento_ticket(request, ticket_id):
 
     if request.method == 'POST':
 
-        # FORM DEL SIDEBAR (estado, prioridad, agente, tipo, categoría, fecha)
+        #  FORM DEL SIDEBAR (estado, prioridad, agente, tipo, categoría, fecha)
         if 'fecha_hora_resolucion' in request.POST:
 
-            # SOLO ADMIN PUEDE EDITAR ESTO
+            #SOLO ADMIN PUEDE EDITAR ESTO
             if not es_admin:
                 messages.error(request, 'No tienes permiso para editar la información del ticket.')
                 return redirect('seguimiento_ticket', ticket_id=ticket.id)
+
+            #Guardar estado anterior antes de modificar
+            estado_anterior = ticket.estado
 
             nuevo_estado = request.POST.get('nuevo_estado')
             nueva_prioridad = request.POST.get('nueva_prioridad') 
@@ -445,9 +447,7 @@ def seguimiento_ticket(request, ticket_id):
             nueva_categoria_id = request.POST.get('nueva_categoria')
             nuevo_tipo_caso_id = request.POST.get('nuevo_tipo_caso')
             horario_asignacion_str = request.POST.get('tiempo_fecha_asignacion')
-
-
-            
+    
             # Guarda tiempo y hora de asignación
             if horario_asignacion_str:
                 try:
@@ -469,9 +469,7 @@ def seguimiento_ticket(request, ticket_id):
             # Actualizar estado
             if nuevo_estado:
                 ticket.estado = int(nuevo_estado)
-            #Nueva Prioridad
-            if nueva_prioridad:
-                ticket.prioridad = (nueva_prioridad)
+
             # Actualizar administrador asignado    
             if nuevo_admin_id:
                 ticket.admin_asignado = Usuario.objects.get(id=nuevo_admin_id)
@@ -486,6 +484,10 @@ def seguimiento_ticket(request, ticket_id):
             if nueva_categoria_id:
                 ticket.categoria = Categoria.objects.get(id=nueva_categoria_id)
 
+            #Actuzalir prioridad
+            if nueva_prioridad:
+                ticket.prioridad = nueva_prioridad 
+            
             # Guardar fecha y hora de resolución
             if fecha_hora_res_str:
                 try:
@@ -502,11 +504,32 @@ def seguimiento_ticket(request, ticket_id):
                 ticket.tiempo_resolucion = None
 
             ticket.save()
+            #Enviar correo SOLO si el estado cambió
+
+            if nuevo_estado and int(nuevo_estado) != estado_anterior:
+                mensaje_usuario = render_to_string(
+                    'tickets/email_actualizacion_estado_user.html',
+                    {
+                        'ticket': ticket,
+                        'horario': horario_asignacion_str,
+                        'estado': ticket.estado,
+                        'prioridad': ticket.prioridad,
+                        'ticket_url': ticket_url,
+                    }
+                )
+
+                enviar_correo_usuario.delay(
+                    ticket.id,
+                    ticket.usuario.email,
+                    mensaje_usuario,
+                    'No responda este correo - Se ha actualizado el estado de su ticket'
+                )
+
             messages.success(request, "Información del ticket actualizada correctamente.")
             return redirect('seguimiento_ticket', ticket_id=ticket.id)
 
         # =============================================
-        # ESTE ES EL FORM DE COMENTARIOS Y ARCHIVOS
+        #  ESTE ES EL FORM DE COMENTARIOS Y ARCHIVOS
         # =============================================
         comentario_texto = request.POST.get('comentario')
         archivo = request.FILES.get('archivo')
@@ -522,23 +545,7 @@ def seguimiento_ticket(request, ticket_id):
         }
 
         admin_email = ticket.admin_asignado.email if ticket.admin_asignado else "soporte@altamiragroup.com.py"
-         #Update de estado una vez modificado el ticket  szaracho 04/02/2026   
-        if nuevo_estado:
-            mensaje_usuario = render_to_string('tickets/email_actualizacion_estado_user.html', {
-                'ticket': ticket,
-                'horario': horario_asignacion_str,
-                'estado' : nuevo_estado,
-                'prioridad' : nueva_prioridad,
-                'ticket_url' : ticket_url,
-            })
 
-            enviar_correo_usuario.delay(
-                ticket.id,
-                ticket.usuario.email,
-                mensaje_usuario,
-                'No responda este correo - Se ha actualizado su ticket'
-            )    
-        
         # Guardar comentario
         if comentario_texto:
             comentario = Comentario.objects.create(ticket=ticket, usuario=usuario, texto=comentario_texto)
@@ -599,7 +606,7 @@ def seguimiento_ticket(request, ticket_id):
         'categorias': categorias,
         'tipos_caso': tipos_caso,
         'administradores': administradores,
-        'es_admin': es_admin,   # para mostrar/ocultar secciones
+        'es_admin': es_admin,   #para mostrar/ocultar secciones
     })
 
 

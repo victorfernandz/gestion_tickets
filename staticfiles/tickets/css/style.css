@@ -495,7 +495,7 @@ footer {
   margin-bottom: 20px;
 }
 
-/* Filas prolijas del form admin */
+/* Filas prolijas del form admin*/
 .ticket-row{
   display: grid;
   grid-template-columns: 130px 1fr;
