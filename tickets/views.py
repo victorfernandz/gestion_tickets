@@ -419,82 +419,77 @@ def seguimiento_ticket(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
     usuario = Usuario.objects.get(id=user_id)
 
-    # Es admin?
     es_admin = usuario.rol and usuario.rol.descripcion == 'ADMIN'
 
-    # Verifica si es el propietario o Admin
     if usuario != ticket.usuario and not es_admin:
         messages.error(request, 'No tienes permiso para ver este ticket.')
         return redirect('home')
 
+    #  SIEMPRE definidos (para que nunca explote)
+    ticket_url = request.build_absolute_uri(
+        reverse('seguimiento_ticket', args=[ticket.id])
+    )
+    horario_asignacion_str = None
+    estado_anterior = ticket.estado
+
     if request.method == 'POST':
 
-        #  FORM DEL SIDEBAR (estado, prioridad, agente, tipo, categoría, fecha)
+        # ==========================
+        # FORM DEL SIDEBAR
+        # ==========================
         if 'fecha_hora_resolucion' in request.POST:
 
-            #SOLO ADMIN PUEDE EDITAR ESTO
             if not es_admin:
                 messages.error(request, 'No tienes permiso para editar la información del ticket.')
                 return redirect('seguimiento_ticket', ticket_id=ticket.id)
 
-            #Guardar estado anterior antes de modificar
+            # estado anterior (lo actualizamos acá también, por claridad)
             estado_anterior = ticket.estado
 
             nuevo_estado = request.POST.get('nuevo_estado')
-            nueva_prioridad = request.POST.get('nueva_prioridad') 
+            nueva_prioridad = request.POST.get('nueva_prioridad')
             fecha_hora_res_str = request.POST.get('fecha_hora_resolucion')
             nuevo_admin_id = request.POST.get('nuevo_admin')
             nueva_categoria_id = request.POST.get('nueva_categoria')
             nuevo_tipo_caso_id = request.POST.get('nuevo_tipo_caso')
             horario_asignacion_str = request.POST.get('tiempo_fecha_asignacion')
-    
+
             # Guarda tiempo y hora de asignación
             if horario_asignacion_str:
                 try:
                     tr = datetime.fromisoformat(horario_asignacion_str)
                     tr_aware = timezone.make_aware(tr)
                     ticket.tiempo_fecha_asignacion = tr_aware
-                    # Guardar solo HH:MM como duración
                     ticket.horario_asignacion = timedelta(hours=tr.hour, minutes=tr.minute)
-                   # horas, minutos = map(int, horario_asignacion_str.split(':'))
-                   # ticket.horario_asignacion = timedelta(hours=horas, minutes=minutos)
                 except ValueError:
                     messages.error(request, "Formato inválido en horario de asignación.")
                     return redirect('seguimiento_ticket', ticket_id=ticket.id)
             else:
                 ticket.tiempo_fecha_asignacion = None
                 ticket.horario_asignacion = None
-                    
 
-            # Actualizar estado
             if nuevo_estado:
                 ticket.estado = int(nuevo_estado)
 
-            # Actualizar administrador asignado    
             if nuevo_admin_id:
                 ticket.admin_asignado = Usuario.objects.get(id=nuevo_admin_id)
             else:
                 ticket.admin_asignado = None
 
-            # Actualizar tipo de caso
             if nuevo_tipo_caso_id:
                 ticket.tipoCaso = Casos.objects.get(id=nuevo_tipo_caso_id)
 
-            # Actualizar categoría
             if nueva_categoria_id:
                 ticket.categoria = Categoria.objects.get(id=nueva_categoria_id)
 
-            #Actuzalir prioridad
             if nueva_prioridad:
-                ticket.prioridad = nueva_prioridad 
-            
-            # Guardar fecha y hora de resolución
+                ticket.prioridad = nueva_prioridad
+
             if fecha_hora_res_str:
                 try:
                     dt = datetime.fromisoformat(fecha_hora_res_str)
                     dt_aware = timezone.make_aware(dt)
                     ticket.fecha_hora_resolucion = dt_aware
-                    # Guardar solo HH:MM como duración
                     ticket.tiempo_resolucion = timedelta(hours=dt.hour, minutes=dt.minute)
                 except ValueError:
                     messages.error(request, "Formato inválido en fecha y hora.")
@@ -504,17 +499,18 @@ def seguimiento_ticket(request, ticket_id):
                 ticket.tiempo_resolucion = None
 
             ticket.save()
-            #Enviar correo SOLO si el estado cambió
 
+            # Enviar correo SOLO si el estado cambió
+            
             if nuevo_estado and int(nuevo_estado) != estado_anterior:
                 mensaje_usuario = render_to_string(
                     'tickets/email_actualizacion_estado_user.html',
                     {
                         'ticket': ticket,
-                        'horario': horario_asignacion_str,
-                        'estado': ticket.estado,
+                        'horario': horario_asignacion_str, 
+                        'estado': ticket.get_estado_display(),
                         'prioridad': ticket.prioridad,
-                        'ticket_url': ticket_url,
+                        'ticket_url': ticket_url,    
                     }
                 )
 
@@ -528,14 +524,11 @@ def seguimiento_ticket(request, ticket_id):
             messages.success(request, "Información del ticket actualizada correctamente.")
             return redirect('seguimiento_ticket', ticket_id=ticket.id)
 
-        # =============================================
-        #  ESTE ES EL FORM DE COMENTARIOS Y ARCHIVOS
-        # =============================================
+        # ==========================
+        # FORM COMENTARIOS/ARCHIVOS
+        # ==========================
         comentario_texto = request.POST.get('comentario')
         archivo = request.FILES.get('archivo')
-
-        portal_url = "http://192.168.0.25"
-        ticket_url = f"{portal_url}{reverse('seguimiento_ticket', args=[ticket.id])}"
 
         usuario_data = {
             'id': usuario.id,
@@ -546,7 +539,6 @@ def seguimiento_ticket(request, ticket_id):
 
         admin_email = ticket.admin_asignado.email if ticket.admin_asignado else "soporte@altamiragroup.com.py"
 
-        # Guardar comentario
         if comentario_texto:
             comentario = Comentario.objects.create(ticket=ticket, usuario=usuario, texto=comentario_texto)
 
@@ -556,9 +548,8 @@ def seguimiento_ticket(request, ticket_id):
                 'tipoCaso': ticket.tipoCaso.descripcion,
                 'comentario': comentario.texto,
                 'prioridad': ticket.get_prioridad_display(),
-                'ticket_url': ticket_url,
+                'ticket_url': ticket_url,  #siempre existe
             })
-
             enviar_correo_admin.delay(ticket.id, admin_email, mensaje_admin, 'Se ha actualizado su ticket')
 
             mensaje_usuario = render_to_string('tickets/email_template_user_comentario.html', {
@@ -567,12 +558,10 @@ def seguimiento_ticket(request, ticket_id):
                 'tipoCaso': ticket.tipoCaso.descripcion,
                 'comentario': comentario.texto,
                 'prioridad': ticket.get_prioridad_display(),
-                'ticket_url': ticket_url,
+                'ticket_url': ticket_url, #siempre existe
             })
-
             enviar_correo_usuario.delay(ticket.id, ticket.usuario.email, mensaje_usuario, 'No responda este correo - Se ha actualizado su ticket')
 
-        # Guardar archivo adjunto
         if archivo:
             archivo_adjunto = ArchivoAdjunto.objects.create(ticket=ticket, archivo=archivo)
 
@@ -581,9 +570,8 @@ def seguimiento_ticket(request, ticket_id):
                 'usuario': usuario_data,
                 'tipoCaso': ticket.tipoCaso.descripcion,
                 'archivo': archivo_adjunto.archivo.name,
-                'ticket_url': ticket_url,
+                'ticket_url': ticket_url,  #siempre existe
             })
-
             enviar_correo_admin.delay(ticket.id, admin_email, mensaje_archivo, 'Se ha actualizado su ticket')
 
         if not comentario_texto and not archivo:
@@ -592,7 +580,7 @@ def seguimiento_ticket(request, ticket_id):
 
         return redirect('seguimiento_ticket', ticket_id=ticket.id)
 
-    # GET: datos para mostrar
+    # GET
     comentarios = ticket.comentarios.all().order_by('fecha_creacion')
     archivos = ticket.archivos.all()
     administradores = Usuario.objects.filter(rol__descripcion='ADMIN')
@@ -606,7 +594,7 @@ def seguimiento_ticket(request, ticket_id):
         'categorias': categorias,
         'tipos_caso': tipos_caso,
         'administradores': administradores,
-        'es_admin': es_admin,   #para mostrar/ocultar secciones
+        'es_admin': es_admin,
     })
 
 
