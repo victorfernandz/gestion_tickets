@@ -83,3 +83,30 @@ document.addEventListener('DOMContentLoaded', function () {
         return '';
     }
 });
+ //Funcion para que el campo de fecha y hora resolucion sea igual en todos los navegadores
+ document.addEventListener("DOMContentLoaded", function () {
+  console.log("✅ script.js cargó");
+
+  console.log("flatpickr =", typeof flatpickr);
+  const a = document.querySelector("#tiempo_fecha_asignacion");
+  const b = document.querySelector("#fecha_hora_resolucion");
+  console.log("input asignacion:", a);
+  console.log("input resolucion:", b);
+
+  if (typeof flatpickr === "undefined") {
+    console.error("❌ Flatpickr no está cargado (CDN).");
+    return;
+  }
+
+  const config = {
+    enableTime: true,
+    dateFormat: "d/m/Y H:i",
+    time_24hr: true,
+    allowInput: true,
+    clickOpens: true,
+    locale: "es"
+  };
+
+  if (a) flatpickr(a, config);
+  if (b) flatpickr(b, config);
+});

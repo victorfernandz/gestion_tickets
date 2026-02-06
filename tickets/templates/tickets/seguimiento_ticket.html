@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seguimiento del Ticket {{ ticket.id }}</title>
     <link rel="stylesheet" href="{% static 'tickets/css/style.css' %}">
-    <script src="{% static 'tickets/js/script.js' %}" defer></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body>
     <!-- Barra superior -->
@@ -181,18 +181,25 @@
                                 </select>
                             </div>
 
-                            <div class="ticket-row">
+                           <div class="ticket-row">
                                 <span>Horario de Asignación:</span>
-                                <input type="datetime-local" name="tiempo_fecha_asignacion"
-                                    value="{% if ticket.tiempo_fecha_asignacion %}{{ ticket.tiempo_fecha_asignacion|date:'Y-m-d\\TH:i' }}{% endif %}">
+                                <input
+                                    type="text"
+                                    id="tiempo_fecha_asignacion"
+                                    name="tiempo_fecha_asignacion"
+                                    value="{% if ticket.tiempo_fecha_asignacion %}{{ ticket.tiempo_fecha_asignacion|date:'d/m/Y H:i' }}{% endif %}"
+                                >
                             </div>
 
-                            <div class="ticket-row">
+                                <div class="ticket-row">
                                 <span>Tiempo de Resolución:</span>
-                                <input type="datetime-local" name="fecha_hora_resolucion"
-                                    value="{% if ticket.fecha_hora_resolucion %}{{ ticket.fecha_hora_resolucion|date:'Y-m-d\\TH:i' }}{% endif %}">
+                                <input
+                                    type="text"
+                                    id="fecha_hora_resolucion"
+                                    name="fecha_hora_resolucion"
+                                    value="{% if ticket.fecha_hora_resolucion %}{{ ticket.fecha_hora_resolucion|date:'d/m/Y H:i' }}{% endif %}"
+                                >
                             </div>
-                            
                             <button type="submit" class="btn-actualizar">Actualizar</button>
                         </form>
 
@@ -238,5 +245,9 @@
             </div>
         </div>
     </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+    <script src="{% static 'tickets/js/script.js' %}"></script>
 </body>
 </html>

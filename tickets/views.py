@@ -457,7 +457,8 @@ def seguimiento_ticket(request, ticket_id):
             # Guarda tiempo y hora de asignación
             if horario_asignacion_str:
                 try:
-                    tr = datetime.fromisoformat(horario_asignacion_str)
+                    #tr = datetime.fromisoformat(horario_asignacion_str)
+                    tr = datetime.strptime(horario_asignacion_str, "%d/%m/%Y %H:%M")
                     tr_aware = timezone.make_aware(tr)
                     ticket.tiempo_fecha_asignacion = tr_aware
                     ticket.horario_asignacion = timedelta(hours=tr.hour, minutes=tr.minute)
@@ -487,7 +488,8 @@ def seguimiento_ticket(request, ticket_id):
 
             if fecha_hora_res_str:
                 try:
-                    dt = datetime.fromisoformat(fecha_hora_res_str)
+                    #dt = datetime.fromisoformat(fecha_hora_res_str)
+                    dt = datetime.strptime(fecha_hora_res_str, "%d/%m/%Y %H:%M")
                     dt_aware = timezone.make_aware(dt)
                     ticket.fecha_hora_resolucion = dt_aware
                     ticket.tiempo_resolucion = timedelta(hours=dt.hour, minutes=dt.minute)
