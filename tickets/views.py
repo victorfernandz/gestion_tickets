@@ -14,6 +14,16 @@ from datetime import datetime
 from django.utils import timezone  
 
 
+# Helper: retorna emails de jefes del departamento del usuario afectado,
+# excluyendo al usuario si él mismo tiene rol JEFE
+def get_emails_jefes(usuario_afectado):
+    jefes = Usuario.objects.filter(
+        departamento=usuario_afectado.departamento,
+        rol__descripcion='JEFE'
+    ).exclude(id=usuario_afectado.id)
+    return [j.email for j in jefes]
+
+
 # Vista de Login
 def login(request):
     if request.method == 'POST':
@@ -176,11 +186,20 @@ def crear_ticket(request):
 
             # correo al usuario afectado (no siempre el que crea)
             enviar_correo_usuario.delay(
-                ticket.id, 
-                usuario_afectado.email, 
+                ticket.id,
+                usuario_afectado.email,
                 mensaje_usuario,
                 'No responda este correo - Se ha creado un nuevo ticket'
             )
+
+            # correo a jefes del departamento (si el usuario afectado no es jefe)
+            for email_jefe in get_emails_jefes(usuario_afectado):
+                enviar_correo_usuario.delay(
+                    ticket.id,
+                    email_jefe,
+                    mensaje_usuario,
+                    'No responda este correo - Se ha creado un nuevo ticket'
+                )
 
             return redirect('listar_tickets')
 
@@ -370,6 +389,15 @@ def administrar_tickets(request):
                 'No responda este correo - Se ha actualizado su ticket'
             )
 
+            # correo a jefes del departamento
+            for email_jefe in get_emails_jefes(ticket.usuario):
+                enviar_correo_usuario.delay(
+                    ticket.id,
+                    email_jefe,
+                    mensaje_usuario,
+                    'No responda este correo - Se ha actualizado su ticket'
+                )
+
         #Enviar correos si se asignó un administrador y horario de asignación
         if ticket.admin_asignado and nuevo_horario_asignacion:
             mensaje_admin = render_to_string('tickets/email_actualizacion_admin.html', {
@@ -402,6 +430,15 @@ def administrar_tickets(request):
                 mensaje_usuario,
                 'No responda este correo - Se ha actualizado su ticket'
             )
+
+            # correo a jefes del departamento
+            for email_jefe in get_emails_jefes(ticket.usuario):
+                enviar_correo_usuario.delay(
+                    ticket.id,
+                    email_jefe,
+                    mensaje_usuario,
+                    'No responda este correo - Se ha actualizado su ticket'
+                )
 
         return redirect('administrar_tickets')
         
@@ -534,6 +571,15 @@ def seguimiento_ticket(request, ticket_id):
                     'No responda este correo - Se ha actualizado el estado de su ticket'
                 )
 
+                # correo a jefes del departamento
+                for email_jefe in get_emails_jefes(ticket.usuario):
+                    enviar_correo_usuario.delay(
+                        ticket.id,
+                        email_jefe,
+                        mensaje_usuario,
+                        'No responda este correo - Se ha actualizado el estado de su ticket'
+                    )
+
             messages.success(request, "Información del ticket actualizada correctamente.")
             return redirect('seguimiento_ticket', ticket_id=ticket.id)
 
@@ -575,6 +621,10 @@ def seguimiento_ticket(request, ticket_id):
             })
             enviar_correo_usuario.delay(ticket.id, ticket.usuario.email, mensaje_usuario, 'No responda este correo - Se ha actualizado su ticket')
 
+            # correo a jefes del departamento
+            for email_jefe in get_emails_jefes(ticket.usuario):
+                enviar_correo_usuario.delay(ticket.id, email_jefe, mensaje_usuario, 'No responda este correo - Se ha actualizado su ticket')
+
         if archivo:
             archivo_adjunto = ArchivoAdjunto.objects.create(ticket=ticket, archivo=archivo)
 
@@ -586,6 +636,10 @@ def seguimiento_ticket(request, ticket_id):
                 'ticket_url': ticket_url,  #siempre existe
             })
             enviar_correo_admin.delay(ticket.id, admin_email, mensaje_archivo, 'Se ha actualizado su ticket')
+
+            # correo a jefes del departamento
+            for email_jefe in get_emails_jefes(ticket.usuario):
+                enviar_correo_usuario.delay(ticket.id, email_jefe, mensaje_archivo, 'No responda este correo - Se ha actualizado su ticket')
 
         if not comentario_texto and not archivo:
             messages.error(request, "Debe agregar un comentario o un archivo.")
