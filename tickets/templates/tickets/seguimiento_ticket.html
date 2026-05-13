@@ -181,6 +181,19 @@
                                 </select>
                             </div>
 
+                            <div class="ticket-row">
+                                <span>Campo Administrativo:</span>
+                                <select name="nuevo_campo_admin">
+                                    <option value="">— Sin asignar —</option>
+                                    {% for opcion in opciones_campo_admin %}
+                                    <option value="{{ opcion.id }}"
+                                        {% if ticket.campo_admin and ticket.campo_admin.id == opcion.id %}selected{% endif %}>
+                                        {{ opcion.descripcion }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
                            <div class="ticket-row">
                                 <span>Horario de Asignación:</span>
                                 <input

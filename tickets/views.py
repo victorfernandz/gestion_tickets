@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.crypto import get_random_string
 from django.contrib import messages
-from .models import Usuario, Ticket, Casos, Categoria, Comentario, ArchivoAdjunto, TokenRestablecimiento,Departamento
+from .models import Usuario, Ticket, Casos, Categoria, Comentario, ArchivoAdjunto, TokenRestablecimiento, Departamento, OpcionCampoAdmin
 from django.template.loader import render_to_string
 from django.http import JsonResponse
 from datetime import timedelta
@@ -138,13 +138,18 @@ def crear_ticket(request):
                 usuario_afectado = usuario_logueado
             ticket = Ticket.objects.create(
                 categoria=categoria,
-                usuario=usuario_afectado,     
-                creador=usuario_logueado,   
+                usuario=usuario_afectado,
+                creador=usuario_logueado,
                 tipoCaso=tipo_caso,
                 descripcion=descripcion,
                 estado=1,
                 prioridad=prioridad,
             )
+
+            # Guardar archivo adjunto si se subió uno al crear el ticket
+            archivo = request.FILES.get('archivo')
+            if archivo:
+                ArchivoAdjunto.objects.create(ticket=ticket, archivo=archivo)
 
             # Generar los mensajes para los correos
             mensaje_admin = render_to_string('tickets/email_template.html', {
@@ -486,6 +491,12 @@ def seguimiento_ticket(request, ticket_id):
             if nueva_prioridad:
                 ticket.prioridad = nueva_prioridad
 
+            nuevo_campo_admin_id = request.POST.get('nuevo_campo_admin')
+            if nuevo_campo_admin_id:
+                ticket.campo_admin = OpcionCampoAdmin.objects.get(id=nuevo_campo_admin_id)
+            else:
+                ticket.campo_admin = None
+
             if fecha_hora_res_str:
                 try:
                     #dt = datetime.fromisoformat(fecha_hora_res_str)
@@ -588,6 +599,7 @@ def seguimiento_ticket(request, ticket_id):
     administradores = Usuario.objects.filter(rol__descripcion='ADMIN')
     categorias = Categoria.objects.all()
     tipos_caso = Casos.objects.all()
+    opciones_campo_admin = OpcionCampoAdmin.objects.filter(activo=True)
 
     return render(request, 'tickets/seguimiento_ticket.html', {
         'ticket': ticket,
@@ -597,6 +609,7 @@ def seguimiento_ticket(request, ticket_id):
         'tipos_caso': tipos_caso,
         'administradores': administradores,
         'es_admin': es_admin,
+        'opciones_campo_admin': opciones_campo_admin,
     })
 
 

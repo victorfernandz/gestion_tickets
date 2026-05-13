@@ -90,9 +90,29 @@ class Ticket(models.Model):
     tiempo_fecha_asignacion = models.DateTimeField(null=True, blank=True)
     
     archivo = models.FileField(upload_to=ticket_upload_path, null=True, blank=True)
-    
+    campo_admin = models.ForeignKey(
+        'OpcionCampoAdmin',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='tickets',
+        verbose_name="Campo Administrativo"
+    )
+
     def __str__(self):
         return f"Ticket {self.id} - {self.tipoCaso.descripcion}"
+
+# Opciones configurables para el campo administrativo interno
+class OpcionCampoAdmin(models.Model):
+    descripcion = models.CharField(max_length=200)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['descripcion']
+        verbose_name = "Opción de Campo Administrativo"
+        verbose_name_plural = "Opciones de Campo Administrativo"
+
+    def __str__(self):
+        return self.descripcion
 
 # Tabla de Comentarios
 class Comentario(models.Model):
