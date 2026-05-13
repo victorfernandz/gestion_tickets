@@ -57,7 +57,41 @@ def home(request):
         return redirect('login')
 
     user = Usuario.objects.get(id=user_id)
-    return render(request, 'tickets/home.html', {'user': user})
+    es_admin = user.rol.descripcion == 'ADMIN'
+    es_jefe = user.rol.descripcion == 'JEFE'
+
+    context = {'user': user, 'es_admin': es_admin, 'es_jefe': es_jefe}
+
+    if es_admin:
+        from datetime import date
+        context.update({
+            'total_abiertos':  Ticket.objects.filter(estado=1).count(),
+            'sin_asignar':     Ticket.objects.filter(estado=1, admin_asignado__isnull=True).count(),
+            'prioridad_alta':  Ticket.objects.filter(estado__in=[1, 2, 3], prioridad=4).count(),
+            'cerrados_hoy':    Ticket.objects.filter(estado=4, fecha_modificacion__date=date.today()).count(),
+            'mis_asignados':   Ticket.objects.filter(admin_asignado=user, estado__in=[1, 2, 3]).order_by('-prioridad', 'fecha_creacion')[:6],
+            'urgentes_sin_asignar': Ticket.objects.filter(admin_asignado__isnull=True, estado=1).order_by('-prioridad', 'fecha_creacion')[:6],
+        })
+    elif es_jefe:
+        from datetime import date, timedelta
+        semana_pasada = date.today() - timedelta(days=7)
+        context.update({
+            'depto_abiertos':       Ticket.objects.filter(usuario__departamento=user.departamento, estado=1).count(),
+            'depto_en_proceso':     Ticket.objects.filter(usuario__departamento=user.departamento, estado=2).count(),
+            'depto_sin_asignar':    Ticket.objects.filter(usuario__departamento=user.departamento, estado=1, admin_asignado__isnull=True).count(),
+            'depto_cerrados_semana':Ticket.objects.filter(usuario__departamento=user.departamento, estado=4, fecha_modificacion__date__gte=semana_pasada).count(),
+            'depto_tickets':        Ticket.objects.filter(usuario__departamento=user.departamento, estado__in=[1, 2, 3]).order_by('-prioridad', 'fecha_creacion')[:8],
+        })
+    else:
+        context.update({
+            'mis_abiertos':   Ticket.objects.filter(usuario=user, estado=1).count(),
+            'mis_en_proceso': Ticket.objects.filter(usuario=user, estado=2).count(),
+            'mis_en_espera':  Ticket.objects.filter(usuario=user, estado=3).count(),
+            'mis_cerrados':   Ticket.objects.filter(usuario=user, estado=4).count(),
+            'mis_tickets':    Ticket.objects.filter(usuario=user).order_by('-fecha_creacion')[:6],
+        })
+
+    return render(request, 'tickets/home.html', context)
 
 # Vista de Logout
 def logout(request):

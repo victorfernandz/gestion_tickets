@@ -5,61 +5,253 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home</title>
+    <title>Inicio</title>
     <link rel="icon" type="image/x-icon" href="{% static 'tickets/imagenes/favicon.ico' %}">
     <link rel="stylesheet" href="{% static 'tickets/css/style.css' %}">
 </head>
 <body>
-    <!-- Barra superior fija -->
+    <!-- Navbar -->
     <header class="navbar">
         <div class="logo">
             <img src="{% static 'tickets/imagenes/logo.jpeg' %}" alt="Logo" class="logo-img">
-        <!--    <img src="{% static 'tickets/imagenes/favicon-32x32.png' %}" alt="Logo" class="logo-img">-->
         </div>
         <div class="navbar-title">
             <h1>Gestión de Tickets</h1>
         </div>
     </header>
 
-    <!-- Contenedor principal -->
     <div class="container">
-        <!-- Menú lateral -->
+        <!-- Sidebar -->
         <div class="sidebar">
             <nav>
                 <ul>
                     <li><a href="{% url 'home' %}">Inicio</a></li>
                     <li><a href="{% url 'listar_tickets' %}">Tickets</a></li>
                     <li><a href="#">Reportes</a></li>
+                    {% if es_admin %}
                     <li><a href="{% url 'administrar_tickets' %}">Administración</a></li>
+                    {% endif %}
                     <li><a href="https://sites.google.com/altamiragroup.com.py/intranet-ag/p%C3%A1gina-principal?authuser=0" target="_blank">Academia AltamiraGroup</a></li>
                 </ul>
             </nav>
-            <!-- Botón de cerrar sesión -->
             <div class="logout-container">
                 <a href="{% url 'logout' %}" class="logout-button">Cerrar Sesión</a>
             </div>
-        </div>        
+        </div>
 
-        <!-- Contenido dinámico -->
+        <!-- Contenido -->
         <main class="content">
-            <div class="home-container">
-                <h1>Bienvenido, {{ user.nombre }} {{ user.apellido }}</h1>
-                <p>Departamento: {{ user.departamento.descripcion }}</p>
-                <p>Seleccione una opción del menú para continuar.</p>
+
+            <div class="dashboard-header">
+                <div>
+                    <h2 class="dashboard-titulo">Bienvenido, {{ user.nombre }} {{ user.apellido }}</h2>
+                    <p class="dashboard-subtitulo">{{ user.departamento.descripcion }} &mdash; {{ user.rol.descripcion }}</p>
+                </div>
+                <a href="{% url 'crear_ticket' %}" class="btn-nuevo-ticket">+ Nuevo Ticket</a>
             </div>
-<!--
-            <div class="tipo-problema">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Prioridad</th>
-                            <th>Detalle</th>
-                            <th>Tiempo Respuesta</th>
-                            <th>Tiempo de Solución</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>-->
+
+            <!-- ══════════ ADMIN ══════════ -->
+            {% if es_admin %}
+
+            <div class="dashboard-cards">
+                <div class="dash-card dash-azul">
+                    <span class="dash-numero">{{ total_abiertos }}</span>
+                    <span class="dash-label">Tickets Abiertos</span>
+                </div>
+                <div class="dash-card dash-rojo">
+                    <span class="dash-numero">{{ sin_asignar }}</span>
+                    <span class="dash-label">Sin Asignar</span>
+                </div>
+                <div class="dash-card dash-naranja">
+                    <span class="dash-numero">{{ prioridad_alta }}</span>
+                    <span class="dash-label">Prioridad Muy Alta</span>
+                </div>
+                <div class="dash-card dash-verde">
+                    <span class="dash-numero">{{ cerrados_hoy }}</span>
+                    <span class="dash-label">Cerrados Hoy</span>
+                </div>
+            </div>
+
+            <div class="dashboard-tablas">
+                <div class="dash-tabla-bloque">
+                    <h3 class="dash-tabla-titulo">Mis tickets asignados</h3>
+                    {% if mis_asignados %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Usuario</th>
+                                <th>Tipo de caso</th>
+                                <th>Prioridad</th>
+                                <th>Estado</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in mis_asignados %}
+                            <tr>
+                                <td>{{ t.id }}</td>
+                                <td>{{ t.usuario.nombre }} {{ t.usuario.apellido }}</td>
+                                <td>{{ t.tipoCaso.descripcion }}</td>
+                                <td><span class="badge-prioridad p{{ t.prioridad }}">{{ t.get_prioridad_display }}</span></td>
+                                <td>{{ t.get_estado_display }}</td>
+                                <td><a href="{% url 'seguimiento_ticket' t.id %}" class="dash-link">Ver →</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="dash-vacio">No tenés tickets asignados activos.</p>
+                    {% endif %}
+                </div>
+
+                <div class="dash-tabla-bloque">
+                    <h3 class="dash-tabla-titulo">Sin asignar — más urgentes</h3>
+                    {% if urgentes_sin_asignar %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Usuario</th>
+                                <th>Tipo de caso</th>
+                                <th>Prioridad</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in urgentes_sin_asignar %}
+                            <tr>
+                                <td>{{ t.id }}</td>
+                                <td>{{ t.usuario.nombre }} {{ t.usuario.apellido }}</td>
+                                <td>{{ t.tipoCaso.descripcion }}</td>
+                                <td><span class="badge-prioridad p{{ t.prioridad }}">{{ t.get_prioridad_display }}</span></td>
+                                <td><a href="{% url 'seguimiento_ticket' t.id %}" class="dash-link">Ver →</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="dash-vacio">No hay tickets sin asignar. ✓</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- ══════════ JEFE ══════════ -->
+            {% elif es_jefe %}
+
+            <div class="dashboard-cards">
+                <div class="dash-card dash-azul">
+                    <span class="dash-numero">{{ depto_abiertos }}</span>
+                    <span class="dash-label">Abiertos en mi depto.</span>
+                </div>
+                <div class="dash-card dash-naranja">
+                    <span class="dash-numero">{{ depto_en_proceso }}</span>
+                    <span class="dash-label">En Proceso</span>
+                </div>
+                <div class="dash-card dash-rojo">
+                    <span class="dash-numero">{{ depto_sin_asignar }}</span>
+                    <span class="dash-label">Sin Asignar</span>
+                </div>
+                <div class="dash-card dash-verde">
+                    <span class="dash-numero">{{ depto_cerrados_semana }}</span>
+                    <span class="dash-label">Cerrados esta semana</span>
+                </div>
+            </div>
+
+            <div class="dashboard-tablas">
+                <div class="dash-tabla-bloque dash-tabla-full">
+                    <h3 class="dash-tabla-titulo">Tickets activos — {{ user.departamento.descripcion }}</h3>
+                    {% if depto_tickets %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Usuario</th>
+                                <th>Tipo de caso</th>
+                                <th>Prioridad</th>
+                                <th>Estado</th>
+                                <th>Asignado a</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in depto_tickets %}
+                            <tr>
+                                <td>{{ t.id }}</td>
+                                <td>{{ t.usuario.nombre }} {{ t.usuario.apellido }}</td>
+                                <td>{{ t.tipoCaso.descripcion }}</td>
+                                <td><span class="badge-prioridad p{{ t.prioridad }}">{{ t.get_prioridad_display }}</span></td>
+                                <td>{{ t.get_estado_display }}</td>
+                                <td>{{ t.admin_asignado.nombre|default:"—" }}</td>
+                                <td><a href="{% url 'seguimiento_ticket' t.id %}" class="dash-link">Ver →</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="dash-vacio">No hay tickets activos en tu departamento. ✓</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- ══════════ USUARIO ══════════ -->
+            {% else %}
+
+            <div class="dashboard-cards">
+                <div class="dash-card dash-azul">
+                    <span class="dash-numero">{{ mis_abiertos }}</span>
+                    <span class="dash-label">Abiertos</span>
+                </div>
+                <div class="dash-card dash-naranja">
+                    <span class="dash-numero">{{ mis_en_proceso }}</span>
+                    <span class="dash-label">En Proceso</span>
+                </div>
+                <div class="dash-card dash-violeta">
+                    <span class="dash-numero">{{ mis_en_espera }}</span>
+                    <span class="dash-label">En Espera</span>
+                </div>
+                <div class="dash-card dash-verde">
+                    <span class="dash-numero">{{ mis_cerrados }}</span>
+                    <span class="dash-label">Cerrados</span>
+                </div>
+            </div>
+
+            <div class="dashboard-tablas">
+                <div class="dash-tabla-bloque dash-tabla-full">
+                    <h3 class="dash-tabla-titulo">Mis últimos tickets</h3>
+                    {% if mis_tickets %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Tipo de caso</th>
+                                <th>Prioridad</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in mis_tickets %}
+                            <tr>
+                                <td>{{ t.id }}</td>
+                                <td>{{ t.tipoCaso.descripcion }}</td>
+                                <td><span class="badge-prioridad p{{ t.prioridad }}">{{ t.get_prioridad_display }}</span></td>
+                                <td>{{ t.get_estado_display }}</td>
+                                <td>{{ t.fecha_creacion|date:"d/m/Y" }}</td>
+                                <td><a href="{% url 'seguimiento_ticket' t.id %}" class="dash-link">Ver →</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="dash-vacio">Todavía no creaste ningún ticket.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% endif %}
+
         </main>
     </div>
 </body>
